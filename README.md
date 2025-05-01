@@ -105,7 +105,7 @@ Usuarios
 
 ```bash
 # 1. Clonar repositorio
-git clone https://github.com/tu-usuario/gestion-reservas.git
+git clone [https://github.com/tu-usuario/gestion-reservas.git](https://github.com/Valverde-Antonio/PI-GestionReserva.git)
 
 # 2. Iniciar servicios
 cd gestion-reservas
