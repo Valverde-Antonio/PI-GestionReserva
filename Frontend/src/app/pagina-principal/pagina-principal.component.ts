@@ -1,11 +1,15 @@
 import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { HeaderComponent } from '../header/header.component'; 
+import { AuthService } from '../auth.service'; 
 
 @Component({
   selector: 'app-pagina-principal',
-  imports: [],
+  standalone: true, 
+  imports: [CommonModule, HeaderComponent], 
   templateUrl: './pagina-principal.component.html',
-  styleUrl: './pagina-principal.component.css'
+  styleUrls: ['./pagina-principal.component.css'] 
 })
 export class PaginaPrincipalComponent {
-
+  constructor(public authService: AuthService) {} 
 }

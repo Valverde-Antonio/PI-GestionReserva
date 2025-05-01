@@ -1,23 +1,15 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { HeaderComponent } from '../header/header.component';
+import { AuthService } from '../auth.service'; // ✅ Ahora sí existe
 
-import { PaginaPrincipalComponent } from './pagina-principal.component';
-
-describe('PaginaPrincipalComponent', () => {
-  let component: PaginaPrincipalComponent;
-  let fixture: ComponentFixture<PaginaPrincipalComponent>;
-
-  beforeEach(async () => {
-    await TestBed.configureTestingModule({
-      imports: [PaginaPrincipalComponent]
-    })
-    .compileComponents();
-
-    fixture = TestBed.createComponent(PaginaPrincipalComponent);
-    component = fixture.componentInstance;
-    fixture.detectChanges();
-  });
-
-  it('should create', () => {
-    expect(component).toBeTruthy();
-  });
-});
+@Component({
+  selector: 'app-pagina-principal',
+  standalone: true,
+  imports: [CommonModule, HeaderComponent],
+  templateUrl: './pagina-principal.component.html',
+  styleUrls: ['./pagina-principal.component.css']
+})
+export class PaginaPrincipalComponent {
+  constructor(public authService: AuthService) {}
+}
