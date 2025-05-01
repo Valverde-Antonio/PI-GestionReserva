@@ -1,0 +1,39 @@
+<div class="main-container">
+  <div class="view-container shadow mx-3 mx-xxl-0">
+    <div class="view-title">
+      <h1>Iniciar Sesión</h1>
+    </div>
+
+    <div class="view-body">
+      <form (ngSubmit)="login()">
+        <div class="mb-3">
+          <label for="usuario" class="form-label">Usuario</label>
+          <input type="text" class="form-control" id="usuario" [(ngModel)]="usuario" name="usuario" placeholder="Introduce tu usuario">
+        </div>
+
+        <div class="mb-3">
+          <label for="clave" class="form-label">Contraseña</label>
+          <input type="password" class="form-control" id="clave" [(ngModel)]="clave" name="clave" placeholder="Introduce tu contraseña">
+        </div>
+
+        <div class="mb-3">
+          <label for="rol" class="form-label">Rol</label>
+          <select class="form-select" id="rol" [(ngModel)]="rol" name="rol">
+            <option value="">Selecciona un rol</option>
+            <option value="profesor">Profesor</option>
+            <option value="equipo">Equipo Directivo</option>
+          </select>
+        </div>
+
+        <div class="d-flex justify-content-center gap-2 mt-4">
+          <button type="submit" class="btn btn-green">
+            <i class="bi bi-box-arrow-in-right"></i> Entrar
+          </button>
+          <button type="button" class="btn btn-red" (click)="limpiar()">
+            <i class="bi bi-x-circle-fill"></i> Limpiar
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
