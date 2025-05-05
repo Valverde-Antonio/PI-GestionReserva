@@ -1,0 +1,26 @@
+.perfil-container {
+    max-width: 800px;
+    margin: 40px auto;
+    background-color: #edf1ef;
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  }
+  
+  .perfil-container h2 {
+    text-align: center;
+    color: #1e4430;
+    margin-bottom: 30px;
+  }
+  
+  .perfil-card p {
+    font-size: 16px;
+    padding: 10px 0;
+    border-bottom: 1px solid #ccc;
+    color: #333;
+  }
+  
+  .perfil-card p:last-child {
+    border-bottom: none;
+  }
+  

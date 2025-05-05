@@ -1,0 +1,29 @@
+<div class="form-wrapper">
+    <h2>Reserva de Aula</h2>
+    <form>
+      <div class="mb-3">
+        <label for="aula" class="form-label">Aula</label>
+        <select id="aula" class="form-select" [(ngModel)]="reserva.aula" name="aula">
+          <option *ngFor="let aula of aulas" [value]="aula">{{ aula }}</option>
+        </select>
+      </div>
+  
+      <div class="mb-3">
+        <label for="fecha" class="form-label">Fecha</label>
+        <input type="date" id="fecha" class="form-control" [(ngModel)]="reserva.fecha" name="fecha">
+      </div>
+  
+      <div class="mb-3">
+        <label for="hora" class="form-label">Hora</label>
+        <input type="time" id="hora" class="form-control" [(ngModel)]="reserva.hora" name="hora">
+      </div>
+  
+      <div class="mb-3">
+        <label for="motivo" class="form-label">Motivo</label>
+        <textarea id="motivo" class="form-control" [(ngModel)]="reserva.motivo" name="motivo"></textarea>
+      </div>
+  
+      <button type="submit" class="btn btn-success custom-verde">Reservar Aula</button>
+    </form>
+  </div>
+  

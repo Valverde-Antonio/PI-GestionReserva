@@ -1,26 +1,27 @@
-<app-header></app-header>
+<div class="reserva-wrapper">
+  <header class="reserva-header">
+    <h1>Bienvenido al sistema de gestión de reservas</h1>
+    <p>Selecciona qué deseas reservar</p>
+  </header>
 
-<div class="container text-center mt-5">
-  <h2 class="mb-4 text-success">Gestión de Reservas</h2>
-  <div class="row justify-content-center">
-    <div class="col-md-4 mb-4">
-      <div class="card border-success h-100 shadow-sm">
-        <div class="card-body">
-          <i class="bi bi-building fs-1 text-success"></i>
-          <h5 class="card-title mt-2 text-success">Reservar Espacio</h5>
-          <p class="card-text text-muted">Accede al sistema de reservas de aulas.</p>
-          <a routerLink="/reservar-aulas" class="btn btn-success mt-3">Entrar</a>
-        </div>
+  <div class="reserva-grid">
+    <!-- AULA -->
+    <div class="reserva-card">
+      <img src="assets/img/aula.jpg" alt="Aula">
+      <h2>Reserva de Aulas</h2>
+      <p>Consulta disponibilidad y gestiona reservas de aulas del centro.</p>
+      <div class="btn-container">
+        <a routerLink="/reservar-aula" class="btn btn-success">Reservar Aula</a>
       </div>
     </div>
-    <div class="col-md-4 mb-4">
-      <div class="card border-success h-100 shadow-sm">
-        <div class="card-body">
-          <i class="bi bi-box-seam fs-1 text-success"></i>
-          <h5 class="card-title mt-2 text-success">Reservar Materiales</h5>
-          <p class="card-text text-muted">Solicita el material que necesitas.</p>
-          <a routerLink="/reservar-materiales" class="btn btn-success mt-3">Entrar</a>
-        </div>
+
+    <!-- MATERIAL -->
+    <div class="reserva-card">
+      <img src="assets/img/material.jpg" alt="Material">
+      <h2>Reserva de Materiales</h2>
+      <p>Accede fácilmente a la reserva de dispositivos, equipos y materiales educativos.</p>
+      <div class="btn-container">
+        <a routerLink="/reservar-material" class="btn btn-success">Reservar Material</a>
       </div>
     </div>
   </div>

@@ -4,27 +4,37 @@
   align-items: center;
   background-color: #1e4430;
   color: white;
-  padding: 10px 20px;
+  padding: 12px 24px;
+  border-bottom: 2px solid #3c7e66;
 }
 
 .nav-left, .nav-right {
   display: flex;
   align-items: center;
-  gap: 15px;
+  gap: 20px;
 }
 
 .nav-text {
   font-weight: 500;
   font-size: 16px;
+  color: white;
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+.nav-text:hover {
+  color: #a9dfbf;
 }
 
 .logout-button {
   background: transparent;
   border: none;
   color: white;
-  font-size: 20px;
+  font-size: 22px;
   cursor: pointer;
+  transition: color 0.3s;
 }
+
 .logout-button:hover {
   color: #ff5e5e;
 }

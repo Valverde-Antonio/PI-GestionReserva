@@ -1,44 +1,43 @@
 import { Routes } from '@angular/router';
+
+// COMPONENTES COMUNES
 import { LoginComponent } from './login/login.component';
 import { FooterComponent } from './footer/footer.component';
+import { HeaderComponent } from './header/header.component';
+import { PaginaPrincipalComponent } from './pagina-principal/pagina-principal.component';
+
+// ADMIN
 import { GestionarEspaciosComponent } from './admin/gestionar-espacios/gestionar-espacios.component';
 import { GestionarRecursosComponent } from './admin/gestionar-recursos/gestionar-recursos.component';
 import { TodasLasReservasComponent } from './admin/todas-las-reservas/todas-las-reservas.component';
-import { EspaciosComponent } from './reservas/espacios/espacios.component';
-import { RecursosComponent } from './reservas/recursos/recursos.component';
-import { ReservarEspacioComponent } from './profesor/reservar-espacio/reservar-espacio.component';
-import { ReservarRecursoComponent } from './profesor/reservar-recurso/reservar-recurso.component';
-import { MisReservasComponent } from './profesor/mis-reservas/mis-reservas.component';
+
+
+// PROFESOR
+
 import { HistoricoReservasComponent } from './profesor/historico-reservas/historico-reservas.component';
-import { ReservasHoyComponent } from './profesor/reservas-hoy/reservas-hoy.component';
-import { HeaderComponent } from './header/header.component';
-import { PaginaPrincipalComponent } from './pagina-principal/pagina-principal.component';
-import path from 'path';
+import { RegistrarComponent } from './profesor/registrar/registrar.component';
+import { ReservarAulaComponent } from './profesor/reservar-aula/reservar-aula.component';
+import { ReservarMaterialComponent } from './profesor/reservar-material/reservar-material.component';
 
 export const routes: Routes = [
+  // REDIRECCIÓN INICIAL
   { path: '', redirectTo: 'login', pathMatch: 'full' },
+
+  // COMUNES
   { path: 'login', component: LoginComponent },
   { path: 'footer', component: FooterComponent },
   { path: 'header', component: HeaderComponent },
+  { path: 'paginaPrincipal', component: PaginaPrincipalComponent },
 
   // ADMIN
   { path: 'admin-espacios', component: GestionarEspaciosComponent },
   { path: 'admin-recursos', component: GestionarRecursosComponent },
   { path: 'admin-reservas', component: TodasLasReservasComponent },
 
-  // RESERVAS
-  { path: 'reservas-espacios', component: EspaciosComponent },
-  { path: 'reservas-recursos', component: RecursosComponent },
 
   // PROFESOR
-  { path: 'profesor/reservar-espacio', component: ReservarEspacioComponent },
-  { path: 'profesor/reservar-recurso', component: ReservarRecursoComponent },
-  { path: 'profesor/mis-reservas', component: MisReservasComponent },
-  { path: 'profesor/historico-reservas', component: HistoricoReservasComponent },
-  { path: 'profesor/reservas-hoy', component: ReservasHoyComponent },
-
-  //PAGINAS
-  { path: 'paginaPrincipal', component: PaginaPrincipalComponent },
-
-
+  { path: 'historicoReservas', component: HistoricoReservasComponent },
+  { path: 'registrar-profesor', component: RegistrarComponent },
+  { path: 'reservar-aula', component: ReservarAulaComponent },
+  { path: 'reservar-material', component: ReservarMaterialComponent }
 ];

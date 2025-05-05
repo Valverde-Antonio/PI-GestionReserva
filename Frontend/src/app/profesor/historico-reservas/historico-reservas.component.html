@@ -1,1 +1,25 @@
-<p>historico-reservas works!</p>
+<div class="historial-wrapper">
+    <h2>Histórico de Reservas</h2>
+  
+    <div *ngIf="historial.length > 0; else noHistorial">
+      <div class="reserva-card" *ngFor="let h of historial">
+        <h3>{{ h.espacio }}</h3>
+        <p><strong>Recurso:</strong> {{ h.recurso }}</p>
+        <p><strong>Fecha:</strong> {{ h.fecha }}</p>
+        <p><strong>Hora:</strong> {{ h.horaInicio }} - {{ h.horaFin }}</p>
+        <p><strong>Estado:</strong> 
+          <span class="estado" [class.finalizada]="h.estado === 'Finalizada'" [class.cancelada]="h.estado === 'Cancelada'">
+            {{ h.estado }}
+          </span>
+        </p>
+      </div>
+    </div>
+  
+    <ng-template #noHistorial>
+      <div class="sin-historial">
+        <p>No hay reservas registradas en el historial.</p>
+        <img src="assets/img/no-history.png" alt="Sin historial" />
+      </div>
+    </ng-template>
+  </div>
+  

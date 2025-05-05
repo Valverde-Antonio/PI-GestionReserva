@@ -1,12 +1,10 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { HeaderComponent } from '../header/header.component';
-import { AuthService } from '../auth.service'; // ✅ Ahora sí existe
+import { AuthService } from '../auth.service';
 
 @Component({
   selector: 'app-pagina-principal',
   standalone: true,
-  imports: [CommonModule, HeaderComponent],
   templateUrl: './pagina-principal.component.html',
   styleUrls: ['./pagina-principal.component.css']
 })
