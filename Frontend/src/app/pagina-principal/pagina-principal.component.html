@@ -1,13 +1,28 @@
-<app-header></app-header>
+<div class="reserva-wrapper">
+  <header class="reserva-header">
+    <h1>Bienvenido al sistema de gestión de reservas</h1>
+    <p>Selecciona qué deseas reservar</p>
+  </header>
 
-<div class="main-container">
-  <div class="view-container shadow mx-3 mx-xxl-0">
-    <div class="view-title">
-      <h1>Bienvenido a la gestión de reservas</h1>
+  <div class="reserva-grid">
+    <!-- AULA -->
+    <div class="reserva-card">
+      <img src="assets/img/aula.jpg" alt="Aula">
+      <h2>Reserva de Aulas</h2>
+      <p>Consulta disponibilidad y gestiona reservas de aulas del centro.</p>
+      <div class="btn-container">
+        <a routerLink="/reservar-aula" class="btn btn-success">Reservar Aula</a>
+      </div>
     </div>
 
-    <div class="view-body">
-      <p class="text-center">Elige una opción en el menú para comenzar.</p>
+    <!-- MATERIAL -->
+    <div class="reserva-card">
+      <img src="assets/img/material.jpg" alt="Material">
+      <h2>Reserva de Materiales</h2>
+      <p>Accede fácilmente a la reserva de dispositivos, equipos y materiales educativos.</p>
+      <div class="btn-container">
+        <a routerLink="/reservar-material" class="btn btn-success">Reservar Material</a>
+      </div>
     </div>
   </div>
 </div>

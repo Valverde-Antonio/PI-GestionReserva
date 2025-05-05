@@ -1,0 +1,28 @@
+.form-wrapper {
+    max-width: 600px;
+    margin: auto;
+    background: white;
+    padding: 2rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  }
+  
+  h2 {
+    color: #3c7e66;
+    text-align: center;
+    margin-bottom: 1.5rem;
+  }
+  
+  .btn.custom-verde {
+    background-color: #3c7e66;
+    border-color: #3c7e66;
+    color: white;
+    font-weight: 600;
+  }
+  
+  .btn.custom-verde:hover {
+    background-color: #2f5f50;
+    border-color: #2f5f50;
+    color: white;
+  }
+  

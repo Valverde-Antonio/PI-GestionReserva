@@ -1,0 +1,16 @@
+<div class="main-container">
+    <div class="view-container shadow">
+      <div class="view-title">
+        <h1>Registrar Profesor</h1>
+      </div>
+      <div class="view-body">
+        <form (ngSubmit)="registrar()">
+          <input type="text" class="form-control mb-3" [(ngModel)]="profesor.nombre" name="nombre" placeholder="Nombre">
+          <input type="text" class="form-control mb-3" [(ngModel)]="profesor.usuario" name="usuario" placeholder="Usuario">
+          <input type="password" class="form-control mb-3" [(ngModel)]="profesor.clave" name="clave" placeholder="Contraseña">
+          <button class="btn btn-green">Registrar</button>
+        </form>
+      </div>
+    </div>
+  </div>
+  

@@ -1,12 +1,12 @@
 <nav class="navbar">
   <div class="nav-left">
-    <span class="nav-text">Inicio</span>
-    <span class="nav-text">Reservas</span>
-    <span class="nav-text">Perfil</span>
+    <a class="nav-text" routerLink="/paginaPrincipal">Inicio</a>
+    <a class="nav-text" routerLink="/historicoReservas">Mis Reservas</a>
+    <a class="nav-text" routerLink="/perfil">Perfil</a>
   </div>
-  
+
   <div class="nav-right">
-    <span class="nav-text">Usuario</span>
-    <button class="logout-button" title="Cerrar sesión">⏎</button>
+    <span class="nav-text">{{ nombreUsuario }}</span>
+    <button class="logout-button" (click)="cerrarSesion()" title="Cerrar sesión">⏎</button>
   </div>
 </nav>

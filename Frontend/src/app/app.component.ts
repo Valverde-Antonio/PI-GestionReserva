@@ -1,12 +1,25 @@
-import { Component } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
+import { Component, OnInit } from '@angular/core';
+import { Router, NavigationEnd, RouterModule } from '@angular/router';
+import { CommonModule } from '@angular/common';
+import { HeaderComponent } from './header/header.component'; 
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet],
+  standalone: true,
+  imports: [CommonModule, RouterModule, HeaderComponent],
   templateUrl: './app.component.html',
-  styleUrl: './app.component.css'
+  styleUrls: ['./app.component.css']
 })
-export class AppComponent {
-  title = 'gestion-reservas';
+export class AppComponent implements OnInit {
+  mostrarHeader = true;
+
+  constructor(private router: Router) {}
+
+  ngOnInit(): void {
+    this.router.events.subscribe(event => {
+      if (event instanceof NavigationEnd) {
+        this.mostrarHeader = event.urlAfterRedirects !== '/login';
+      }
+    });
+  }
 }
