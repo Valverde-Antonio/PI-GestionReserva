@@ -49,4 +49,7 @@
     width: 180px;
     opacity: 0.75;
   }
-  
+  .filtros label {
+    font-weight: bold;
+    color: #1e4430;
+  }

@@ -25,4 +25,16 @@
     border-color: #2f5f50;
     color: white;
   }
-  
+  .disponible {
+    background-color: #d4edda;
+    cursor: pointer;
+    transition: background-color 0.3s;
+  }
+  .disponible:hover {
+    background-color: #c3e6cb;
+  }
+  .ocupado {
+    background-color: #f8d7da;
+    color: #721c24;
+    cursor: not-allowed;
+  }

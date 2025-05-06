@@ -1,29 +1,30 @@
-<div class="form-wrapper">
-    <h2>Reserva de Material</h2>
-    <form>
-      <div class="mb-3">
-        <label for="material" class="form-label">Material</label>
-        <select id="material" class="form-select" [(ngModel)]="reserva.material" name="material">
-          <option *ngFor="let item of materiales" [value]="item">{{ item }}</option>
-        </select>
-      </div>
-  
-      <div class="mb-3">
-        <label for="cantidad" class="form-label">Cantidad</label>
-        <input type="number" class="form-control" id="cantidad" name="cantidad" [(ngModel)]="reserva.cantidad" min="1">
-      </div>
-  
-      <div class="mb-3">
-        <label for="fecha" class="form-label">Fecha de Uso</label>
-        <input type="date" class="form-control" id="fecha" name="fecha" [(ngModel)]="reserva.fecha">
-      </div>
-  
-      <div class="mb-3">
-        <label for="aula" class="form-label">Aula de uso</label>
-        <input type="text" class="form-control" id="aula" name="aula" [(ngModel)]="reserva.aula">
-      </div>
-  
-      <button type="submit" class="btn btn-success custom-verde">Reservar Material</button>
-    </form>
-  </div>
-  
+<div class="container mt-4">
+  <h2 class="mb-4">Reserva de Material</h2>
+
+  <label for="fecha" class="form-label">Selecciona una fecha:</label>
+  <input type="date" class="form-control mb-4" [(ngModel)]="fechaSeleccionada">
+
+  <table class="table table-bordered text-center">
+    <thead class="table-success">
+      <tr>
+        <th>Hora</th>
+        <th *ngFor="let material of materiales">{{ material }}</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let turno of turnos">
+        <td><strong>{{ turno.hora }}</strong></td>
+        <td
+          *ngFor="let material of materiales"
+          role="button"
+          tabindex="0"
+          (click)="reservar(turno.hora, material)"
+          (keydown.enter)="reservar(turno.hora, material)"
+          [ngClass]="{ 'disponible': !isReservado(turno, material), 'ocupado': isReservado(turno, material) }"
+        >
+          {{ isReservado(turno, material) ? cantidadReservada(turno, material) + ' reservados' : 'Disponible' }}
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
