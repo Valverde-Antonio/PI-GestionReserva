@@ -1,7 +1,9 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
+
 .main-container {
   margin: 0 auto;
   padding-top: 80px;
-  max-width: 1350px;
+  max-width: 450px; /* ✅ Reducido para hacerlo más estrecho */
   box-sizing: border-box;
 }
 
@@ -28,7 +30,7 @@
 }
 
 .view-body {
-  margin: 50px 50px 0;
+  margin: 50px 30px 0;
 }
 
 .btn {
@@ -57,4 +59,9 @@
   border: 2px solid #d74e58;
   color: #d74e58;
   background-color: white;
+}
+
+.input-group-text {
+  background-color: #3C7E66;
+  color: white;
 }

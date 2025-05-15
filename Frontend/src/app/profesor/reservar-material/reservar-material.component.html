@@ -1,28 +1,32 @@
 <div class="container mt-4">
-  <h2 class="mb-4">Reserva de Material</h2>
+  <h2 class="mb-3">Reserva de Material</h2>
 
   <label for="fecha" class="form-label">Selecciona una fecha:</label>
-  <input type="date" class="form-control mb-4" [(ngModel)]="fechaSeleccionada">
+  <input type="date" class="form-control mb-3" [(ngModel)]="fechaSeleccionada">
+
+  <label for="material" class="form-label">Selecciona un material:</label>
+  <select class="form-select mb-4" [(ngModel)]="materialSeleccionado">
+    <option *ngFor="let material of materiales" [value]="material">{{ material }}</option>
+  </select>
 
   <table class="table table-bordered text-center">
     <thead class="table-success">
       <tr>
         <th>Hora</th>
-        <th *ngFor="let material of materiales">{{ material }}</th>
+        <th>Reserva para {{ materialSeleccionado }}</th>
       </tr>
     </thead>
     <tbody>
       <tr *ngFor="let turno of turnos">
         <td><strong>{{ turno.hora }}</strong></td>
         <td
-          *ngFor="let material of materiales"
           role="button"
           tabindex="0"
-          (click)="reservar(turno.hora, material)"
-          (keydown.enter)="reservar(turno.hora, material)"
-          [ngClass]="{ 'disponible': !isReservado(turno, material), 'ocupado': isReservado(turno, material) }"
+          (click)="reservar(turno.hora)"
+          (keydown.enter)="reservar(turno.hora)"
+          [ngClass]="{ 'disponible': !isReservado(turno), 'ocupado': isReservado(turno) }"
         >
-          {{ isReservado(turno, material) ? cantidadReservada(turno, material) + ' reservados' : 'Disponible' }}
+          {{ isReservado(turno) ? cantidadReservada(turno) + ' reservados' : 'Disponible' }}
         </td>
       </tr>
     </tbody>

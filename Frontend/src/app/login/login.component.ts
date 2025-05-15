@@ -12,10 +12,10 @@ import { FormsModule } from '@angular/forms';
 export class LoginComponent {
   usuario: string = '';
   clave: string = '';
-  rol: string = ''; // ✅ nueva propiedad
+  rol: string = '';
+  mostrarPassword: boolean = false;
 
   constructor(private router: Router) {}
-
 
   login() {
     if (this.usuario === 'usuario' && this.clave === 'usuario') {
@@ -33,5 +33,9 @@ export class LoginComponent {
     this.usuario = '';
     this.clave = '';
     this.rol = '';
+  }
+
+  togglePassword() {
+    this.mostrarPassword = !this.mostrarPassword;
   }
 }

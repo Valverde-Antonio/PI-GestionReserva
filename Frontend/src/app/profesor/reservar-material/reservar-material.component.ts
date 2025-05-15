@@ -16,6 +16,7 @@ interface Turno {
 })
 export class ReservarMaterialComponent {
   materiales: string[] = ['Proyector', 'Portátil', 'Pizarra Digital'];
+  materialSeleccionado: string = this.materiales[0];
   fechaSeleccionada: string = '';
 
   turnos: Turno[] = [
@@ -28,36 +29,36 @@ export class ReservarMaterialComponent {
     { hora: '13:30 - 14:30', reservas: {} }
   ];
 
-  reservar(hora: string, material: string): void {
+  reservar(hora: string): void {
     const turno = this.turnos.find(t => t.hora === hora);
     if (!turno) return;
 
-    const cantidadActual = turno.reservas[material] || 0;
+    const cantidadActual = turno.reservas[this.materialSeleccionado] || 0;
 
     if (cantidadActual === 0) {
-      const input = prompt(`¿Cuántos ${material} deseas reservar de ${hora} el ${this.fechaSeleccionada}?`);
+      const input = prompt(`¿Cuántos ${this.materialSeleccionado} deseas reservar de ${hora} el ${this.fechaSeleccionada}?`);
       const cantidad = Number(input);
 
       if (!isNaN(cantidad) && cantidad > 0) {
-        turno.reservas[material] = cantidad;
-        console.log(`Reserva confirmada: ${cantidad} ${material} - ${hora} - ${this.fechaSeleccionada}`);
+        turno.reservas[this.materialSeleccionado] = cantidad;
+        console.log(`Reserva confirmada: ${cantidad} ${this.materialSeleccionado} - ${hora} - ${this.fechaSeleccionada}`);
       } else {
         alert('Cantidad no válida.');
       }
     } else {
-      const liberar = confirm(`Ya hay reservados ${cantidadActual} ${material}. ¿Deseas cancelar la reserva?`);
+      const liberar = confirm(`Ya hay reservados ${cantidadActual} ${this.materialSeleccionado}. ¿Deseas cancelar la reserva?`);
       if (liberar) {
-        turno.reservas[material] = 0;
-        console.log(`Reserva cancelada: ${material} - ${hora}`);
+        turno.reservas[this.materialSeleccionado] = 0;
+        console.log(`Reserva cancelada: ${this.materialSeleccionado} - ${hora}`);
       }
     }
   }
 
-  isReservado(turno: Turno, material: string): boolean {
-    return (turno.reservas[material] || 0) > 0;
+  isReservado(turno: Turno): boolean {
+    return (turno.reservas[this.materialSeleccionado] || 0) > 0;
   }
 
-  cantidadReservada(turno: Turno, material: string): number {
-    return turno.reservas[material] || 0;
+  cantidadReservada(turno: Turno): number {
+    return turno.reservas[this.materialSeleccionado] || 0;
   }
 }
