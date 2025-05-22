@@ -1,0 +1,42 @@
+.admin-navbar {
+  height: 75px;
+  width: 100%;
+  background-color: #153529;
+  font-family: 'Poppins', sans-serif;
+  font-size: 16px;
+  color: white;
+  /* Se quita el posicionamiento fijo */
+  position: relative;
+  z-index: 1000;
+}
+
+.admin-navbar .nav-link {
+  color: white;
+  font-weight: 500;
+  text-decoration: none;
+  transition: color 0.3s;
+}
+
+.admin-navbar .nav-link:hover {
+  color: #a9dfbf;
+}
+
+.admin-navbar .btn-outline-light {
+  color: white;
+  border-color: white;
+}
+
+.admin-navbar .btn-outline-light:hover {
+  background-color: white;
+  color: #153529;
+  border-color: white;
+}
+
+.admin-navbar i {
+  font-size: 18px;
+}
+
+/* Se elimina el padding-top global que compensaba el fixed */
+body {
+  padding-top: 0;
+}

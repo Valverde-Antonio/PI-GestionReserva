@@ -17,17 +17,22 @@ export class LoginComponent {
 
   constructor(private router: Router) {}
 
-  login() {
-    if (this.usuario === 'usuario' && this.clave === 'usuario') {
-      if (this.rol === 'profesor' || this.rol === 'equipo') {
-        this.router.navigate(['/paginaPrincipal']);
-      } else {
-        alert('Por favor, selecciona un rol.');
-      }
+login() {
+  if (this.usuario === 'usuario' && this.clave === 'usuario') {
+    if (this.rol === 'profesor' || this.rol === 'equipo') {
+      // Guardar el rol en localStorage
+      localStorage.setItem('rol', this.rol);
+
+      // Redirigir según el rol
+      const ruta = this.rol === 'profesor' ? '/paginaPrincipal' : '/admin';
+      this.router.navigate([ruta]);
     } else {
-      alert('Usuario o contraseña incorrectos');
+      alert('Por favor, selecciona un rol.');
     }
+  } else {
+    alert('Usuario o contraseña incorrectos');
   }
+}
 
   limpiar() {
     this.usuario = '';

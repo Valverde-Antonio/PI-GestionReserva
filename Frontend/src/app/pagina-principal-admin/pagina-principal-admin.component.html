@@ -1,0 +1,29 @@
+<app-header-admin [nombreUsuario]="'Admin'"></app-header-admin>
+<div class="reserva-wrapper">
+  <header class="reserva-header">
+    <h1>Bienvenido al sistema de gestión de reservas</h1>
+    <p>Selecciona qué deseas reservar</p>
+  </header>
+
+  <div class="reserva-grid">
+    <!-- AULA -->
+    <div class="reserva-card">
+      <img src="assets/img/aula.jpg" alt="Aula">
+      <h2>Reserva de Aulas</h2>
+      <p>Consulta disponibilidad y gestiona reservas de aulas del centro.</p>
+      <div class="btn-container">
+        <a routerLink="/gestionar-espacios" class="btn btn-success">Reservar Aula</a>
+      </div>
+    </div>
+
+    <!-- MATERIAL -->
+    <div class="reserva-card">
+      <img src="assets/img/material.jpg" alt="Material">
+      <h2>Reserva de Materiales</h2>
+      <p>Accede fácilmente a la reserva de dispositivos, equipos y materiales educativos.</p>
+      <div class="btn-container">
+        <a routerLink="/gestionar-recursos" class="btn btn-success">Reservar Material</a>
+      </div>
+    </div>
+  </div>
+</div>

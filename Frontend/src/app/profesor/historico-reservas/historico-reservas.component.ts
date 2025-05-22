@@ -13,7 +13,7 @@ import autoTable from 'jspdf-autotable';
 })
 export class HistoricoReservasComponent implements OnInit {
   historial: any[] = [];
-  historialFiltrado: any[] = [];
+  filtradoReservas: any[] = [];
 
   filtroFecha: string = '';
   filtroMaterial: string = '';
@@ -27,11 +27,11 @@ export class HistoricoReservasComponent implements OnInit {
       { espacio: 'Aula 1', recurso: 'Portátiles x10', fecha: '2025-04-05', horaInicio: '11:30', horaFin: '12:30', estado: 'Cancelada' }
     ];
 
-    this.filtrarHistorial();
+    this.filtrarReservas();
   }
 
-  filtrarHistorial(): void {
-    this.historialFiltrado = this.historial.filter(h => {
+  filtrarReservas(): void {
+    this.filtradoReservas = this.historial.filter(h => {
       const coincideFecha = this.filtroFecha ? h.fecha === this.filtroFecha : true;
       const coincideMaterial = this.filtroMaterial
         ? h.recurso.toLowerCase().includes(this.filtroMaterial.toLowerCase())
@@ -43,7 +43,7 @@ export class HistoricoReservasComponent implements OnInit {
   limpiarFiltros(): void {
     this.filtroFecha = '';
     this.filtroMaterial = '';
-    this.filtrarHistorial();
+    this.filtrarReservas();
   }
   exportarPDFMisReservas(): void {
     const doc = new jsPDF();
@@ -62,7 +62,7 @@ export class HistoricoReservasComponent implements OnInit {
     doc.text('REGISTRO DE MIS RESERVAS', doc.internal.pageSize.getWidth() / 2, 35, { align: 'center' });
   
     // Datos del historial filtrado
-    const body = this.historialFiltrado.map(h => [
+    const body = this.filtradoReservas.map(h => [
       h.espacio,
       h.recurso,
       h.fecha,

@@ -1,6 +1,5 @@
-import { Component, Input } from '@angular/core';
-import { Router } from '@angular/router';
-import { RouterModule } from '@angular/router';
+import { Component, OnInit } from '@angular/core';
+import { RouterModule, Router } from '@angular/router';
 
 @Component({
   selector: 'app-header',
@@ -9,15 +8,25 @@ import { RouterModule } from '@angular/router';
   templateUrl: './header.component.html',
   styleUrls: ['./header.component.css']
 })
-export class HeaderComponent {
-  @Input() nombreUsuario: string = 'Usuario';
-  constructor(private router: Router) { }
-  cerrarSesion() {
-    console.log('Cerrar sesión');
-    // Limpiar datos de sesión (si están almacenados en localStorage o sessionStorage)
+export class HeaderComponent implements OnInit {
+  mostrarMenu: boolean = false;
+  pantallaPequena: boolean = false;
+
+  constructor(private router: Router) {}
+
+  ngOnInit(): void {
+    this.pantallaPequena = window.innerWidth < 768;
+    this.mostrarMenu = !this.pantallaPequena;
+
+    window.addEventListener('resize', () => {
+      this.pantallaPequena = window.innerWidth < 768;
+      if (!this.pantallaPequena) this.mostrarMenu = true;
+    });
+  }
+
+  cerrarSesion(): void {
     sessionStorage.clear();
     localStorage.clear();
-    // Redirigir al login
     this.router.navigate(['/login']);
   }
 }

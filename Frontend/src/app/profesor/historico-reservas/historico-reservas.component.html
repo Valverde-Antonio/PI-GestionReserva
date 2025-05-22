@@ -4,17 +4,17 @@
   <div class="filtros mb-4">
     <div class="row g-3">
       <div class="mb-3 text-end">
-        <button class="btn btn-success" (click)="exportarPDFMisReservas()" [disabled]="historialFiltrado.length === 0">
+        <button class="btn btn-success" (click)="exportarPDFMisReservas()" [disabled]="filtradoReservas.length === 0">
           Exportar a PDF
         </button>
       </div>
       <div class="col-md-4">
         <label class="form-label">Filtrar por fecha:</label>
-        <input type="date" class="form-control" [(ngModel)]="filtroFecha" (change)="filtrarHistorial()">
+        <input type="date" class="form-control" [(ngModel)]="filtroFecha" (change)="filtrarReservas()">
       </div>
       <div class="col-md-4">
         <label class="form-label">Filtrar por tipo de material:</label>
-        <select class="form-select" [(ngModel)]="filtroMaterial" (change)="filtrarHistorial()">
+        <select class="form-select" [(ngModel)]="filtroMaterial" (change)="filtrarReservas()">
           <option value="">Todos</option>
           <option value="proyector">Proyector</option>
           <option value="portátil">Portátiles</option>
@@ -27,8 +27,8 @@
     </div>
   </div>
 
-  <div *ngIf="historialFiltrado.length > 0; else noHistorial">
-    <div class="reserva-card" *ngFor="let h of historialFiltrado">
+  <div *ngIf="filtradoReservas.length > 0; else noHistorial">
+    <div class="reserva-card" *ngFor="let h of filtradoReservas">
       <h3>{{ h.espacio }}</h3>
       <p><strong>Recurso:</strong> {{ h.recurso }}</p>
       <p><strong>Fecha:</strong> {{ h.fecha }}</p>

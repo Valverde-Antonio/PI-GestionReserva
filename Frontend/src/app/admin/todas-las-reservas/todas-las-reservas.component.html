@@ -1,1 +1,145 @@
-<p>todas-las-reservas works!</p>
+<app-header-admin [nombreUsuario]="'Admin'"></app-header-admin>
+
+<div class="historial-wrapper">
+    <h2>Todas las Reservas</h2>
+
+    <div class="filtros mb-4">
+        <div class="row g-3">
+            <div class="col-md-4">
+                <label class="form-label">Filtrar por fecha:</label>
+                <input type="date" class="form-control" [(ngModel)]="filtroFecha" (change)="filtrarReservas()">
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Filtrar por tipo de material:</label>
+                <select class="form-select" [(ngModel)]="filtroMaterial" (change)="filtrarReservas()">
+                    <option value="">Todos</option>
+                    <option value="proyector">Proyector</option>
+                    <option value="portátil">Portátiles</option>
+                    <option value="pizarra">Pizarra Digital</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Filtrar por profesor:</label>
+                <select class="form-select" [(ngModel)]="filtroProfesor" (change)="filtrarReservas()">
+                    <option *ngFor="let prof of profesores" [value]="prof">{{ prof }}</option>
+                </select>
+            </div>
+            <div class="col-12 d-flex justify-content-end">
+                <button class="btn btn-secondary mt-3" (click)="limpiarFiltros()">Limpiar filtros</button>
+            </div>
+            <div class="text-end mb-3">
+                <button class="btn btn-success" (click)="exportarPDFTodasReservas()" [disabled]="filtradoReservas.length === 0">
+                    Exportar a PDF
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div *ngIf="filtradoReservas.length > 0; else noReservas">
+        <div class="reserva-card" *ngFor="let r of filtradoReservas">
+            <h3>{{ r.espacio }}</h3>
+            <p><strong>Recurso:</strong> {{ r.recurso }}</p>
+            <p><strong>Fecha:</strong> {{ r.fecha }}</p>
+            <p><strong>Hora:</strong> {{ r.horaInicio }} - {{ r.horaFin }}</p>
+            <p><strong>Profesor:</strong> {{ r.profesor }}</p>
+            <p><strong>Estado:</strong>
+                <span class="estado" [class.finalizada]="r.estado === 'Finalizada'"
+                      [class.cancelada]="r.estado === 'Cancelada'">
+                    {{ r.estado }}
+                </span>
+            </p>
+            <div class="d-flex justify-content-end gap-2 mt-3">
+                <button class="btn btn-outline-danger btn-sm" (click)="eliminarReserva(r)">
+                    <i class="bi bi-trash"></i> Eliminar
+                </button>
+                <button class="btn btn-outline-success btn-sm" (click)="modificarReserva(r)">
+                    <i class="bi bi-pencil-square"></i> Modificar
+                </button>
+                <button class="btn btn-outline-primary btn-sm" (click)="verDetalles(r)">
+                    <i class="bi bi-plus-square-fill"></i> Ver Detalles
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <ng-template #noReservas>
+        <div class="sin-historial">
+            <p>No hay reservas con los filtros actuales.</p>
+            <img src="assets/img/no-history.png" alt="Sin reservas" />
+        </div>
+    </ng-template>
+</div>
+
+<!-- MODAL FUNCIONAL ANGULAR -->
+<div class="custom-backdrop" *ngIf="mostrarModalActualizar">
+  <div class="custom-modal-box">
+    <div class="modal-header bg-success text-white d-flex justify-content-between align-items-center px-3 py-2">
+      <h5 class="m-0">
+        <i class="bi bi-pencil-square"></i> Editar Reserva
+      </h5>
+      <button class="btn-close btn-close-white" (click)="cerrarModal()"></button>
+    </div>
+
+    <div class="modal-body p-4">
+      <div class="mb-3">
+        <label class="form-label">Profesor:</label>
+        <input class="form-control" [(ngModel)]="reservaSeleccionada.profesor">
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Espacio:</label>
+        <input class="form-control" [(ngModel)]="reservaSeleccionada.espacio">
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Recurso:</label>
+        <input class="form-control" [(ngModel)]="reservaSeleccionada.recurso">
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Fecha:</label>
+        <input type="date" class="form-control" [(ngModel)]="reservaSeleccionada.fecha">
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Hora Inicio:</label>
+        <input type="time" class="form-control" [(ngModel)]="reservaSeleccionada.horaInicio">
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Hora Fin:</label>
+        <input type="time" class="form-control" [(ngModel)]="reservaSeleccionada.horaFin">
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Estado:</label>
+        <select class="form-select" [(ngModel)]="reservaSeleccionada.estado">
+          <option value="Finalizada">Finalizada</option>
+          <option value="Cancelada">Cancelada</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="modal-footer px-4 pb-3 d-flex justify-content-end gap-2">
+      <button class="btn btn-outline-secondary" (click)="cerrarModal()">
+        <i class="bi bi-x-circle-fill"></i> Cancelar
+      </button>
+      <button class="btn btn-success" (click)="guardarCambios()">
+        <i class="bi bi-check-circle-fill"></i> Guardar Cambios
+      </button>
+    </div>
+  </div>
+</div>
+<!-- MODAL CONFIRMACIÓN ELIMINACIÓN -->
+<div class="custom-backdrop" *ngIf="mostrarModalEliminar">
+  <div class="custom-modal-box text-center">
+    <div class="modal-header bg-success text-white d-flex justify-content-center py-2">
+      <h5 class="m-0">Eliminar</h5>
+    </div>
+    <div class="modal-body p-4">
+      <p class="fs-5 mb-4"><strong>¿Desea eliminar?</strong></p>
+      <div class="d-flex justify-content-center gap-4">
+        <button class="btn btn-outline-success rounded-circle px-3 py-2" (click)="confirmarEliminacion()">
+          <i class="bi bi-check-circle-fill fs-4"></i>
+        </button>
+        <button class="btn btn-outline-danger rounded-circle px-3 py-2" (click)="cancelarEliminacion()">
+          <i class="bi bi-x-circle-fill fs-4"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

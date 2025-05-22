@@ -1,16 +1,29 @@
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
 
+body, html {
+  height: 100%;
+  margin: 0;
+  font-family: 'Poppins', sans-serif;
+}
+
 .main-container {
-  margin: 0 auto;
-  padding-top: 80px;
-  max-width: 450px; /* ✅ Reducido para hacerlo más estrecho */
-  box-sizing: border-box;
+  background-image: url('/assets/img/fondoLogin.jpg');
+  background-size: cover;
+  background-position: center;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
 }
 
 .view-container {
-  padding-bottom: 50px;
-  border-radius: 10px;
-  background-color: #edf1ef;
+  background-color: rgba(255, 255, 255, 0.95);
+  padding: 10px;
+  border-radius: 12px;
+  max-width: 420px;
+  width: 100%;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
 }
 
 .view-title {
@@ -34,7 +47,7 @@
 }
 
 .btn {
-  min-width: 130px;
+  min-width: 100px;
 }
 
 .btn-green {
@@ -64,4 +77,41 @@
 .input-group-text {
   background-color: #3C7E66;
   color: white;
+}
+
+/* Responsive Styles */
+@media (max-width: 576px) {
+  .main-container {
+    padding: 20px 10px;
+  }
+
+  .view-container {
+    padding: 20px;
+    margin: 0 10px;
+    border-radius: 10px;
+  }
+
+  .view-title h1 {
+    font-size: 18px;
+  }
+
+  .view-body {
+    margin: 30px 10px 0;
+  }
+
+  .btn {
+    min-width: unset;
+    width: 100%;
+    padding: 12px;
+    font-size: 1rem;
+  }
+
+  .input-group-text {
+    font-size: 1rem;
+    padding: 0.5rem 0.75rem;
+  }
+
+  .form-control, .form-select {
+    font-size: 1rem;
+  }
 }

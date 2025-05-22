@@ -1,2 +1,3 @@
-<app-header *ngIf="mostrarHeader"></app-header>
+<app-header *ngIf="rol === 'profesor'"></app-header>
+<app-header-admin *ngIf="rol === 'admin'"></app-header-admin>
 <router-outlet></router-outlet>

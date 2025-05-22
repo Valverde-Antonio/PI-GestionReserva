@@ -3,26 +3,25 @@
     <button class="btn d-md-none text-white" type="button" (click)="mostrarMenu = !mostrarMenu">
       <i class="bi bi-list"></i>
     </button>
-
     <div class="d-flex flex-column flex-md-row gap-3" [class.d-none]="!mostrarMenu && pantallaPequena">
-      <a class="nav-link text-white d-flex align-items-center gap-1" routerLink="/paginaPrincipal">
+      <a class="nav-link text-white d-flex align-items-center gap-1" routerLink="/admin">
         <i class="bi bi-house-door-fill"></i> Inicio
       </a>
-      <a class="nav-link text-white d-flex align-items-center gap-1" routerLink="/reservar-aula">
-        <i class="bi bi-calendar-fill"></i> Reservar Aula
+      <a class="nav-link text-white d-flex align-items-center gap-1" routerLink="/admin-espacios">
+        <i class="bi bi-calendar-fill"></i> Aula
       </a>
-      <a class="nav-link text-white d-flex align-items-center gap-1" routerLink="/reservar-material">
-        <i class="bi bi-image"></i> Reservar Material
+      <a class="nav-link text-white d-flex align-items-center gap-1" routerLink="/admin-recursos">
+        <i class="bi bi-image"></i> Material
       </a>
-      <a class="nav-link text-white d-flex align-items-center gap-1" routerLink="/historicoReservas">
-        <i class="bi bi-clock-fill"></i> Mis Reservas
+      <a class="nav-link text-white d-flex align-items-center gap-1" routerLink="/admin-reservas">
+        <i class="bi bi-search"></i> Ver Reservas
       </a>
     </div>
   </div>
 
   <div class="d-flex align-items-center gap-3">
     <span class="text-white d-flex align-items-center gap-1">
-      <i class="bi bi-person-fill"></i> Profesor
+      <i class="bi bi-person-fill"></i> Admin
     </span>
     <button class="btn btn-outline-light btn-sm d-flex align-items-center gap-1" (click)="cerrarSesion()">
       <i class="bi bi-escape"></i> Cerrar sesión

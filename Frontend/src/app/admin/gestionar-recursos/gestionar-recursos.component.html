@@ -1,1 +1,40 @@
-<p>gestionar-recursos works!</p>
+<app-header-admin [nombreUsuario]="'Admin'"></app-header-admin>
+<div class="form-wrapper mt-4">
+  <h2 class="mb-3">Reserva de Material - Administración</h2>
+
+  <label for="fecha" class="form-label">Selecciona una fecha:</label>
+  <input type="date" class="form-control mb-3" [(ngModel)]="fechaSeleccionada">
+
+  <label for="material" class="form-label">Selecciona un material:</label>
+  <select class="form-select mb-4" [(ngModel)]="materialSeleccionado">
+    <option *ngFor="let material of materiales" [value]="material">{{ material }}</option>
+  </select>
+
+  <label for="profesor" class="form-label">Selecciona un profesor:</label>
+  <select class="form-select mb-4" [(ngModel)]="profesorSeleccionado">
+    <option *ngFor="let profesor of profesores" [value]="profesor">{{ profesor }}</option>
+  </select>
+
+  <table class="table table-bordered text-center">
+    <thead class="table-success">
+      <tr>
+        <th>Hora</th>
+        <th>Reserva para {{ materialSeleccionado }} - Profesor: {{ profesorSeleccionado }}</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let turno of turnos">
+        <td><strong>{{ turno.hora }}</strong></td>
+        <td
+          role="button"
+          tabindex="0"
+          (click)="reservar(turno.hora)"
+          (keydown.enter)="reservar(turno.hora)"
+          [ngClass]="{ 'disponible': !isReservado(turno), 'ocupado': isReservado(turno) }"
+        >
+          {{ isReservado(turno) ? cantidadReservada(turno) + ' reservados' : 'Disponible' }}
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
