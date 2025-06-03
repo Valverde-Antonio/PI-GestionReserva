@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  frontend:
+    build:
+      context: ./Frontend
+    container_name: frontend-app
+    ports:
+      - "4200:80"
+    depends_on:
+      - backend
+    restart: always
+
+  backend:
+    build:
+      context: ./Backend
+    container_name: backend-app
+    ports:
+      - "8081:8080"
+    depends_on:
+      - db
+    restart: always
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/gestion_reservas
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: admin
+
+  db:
+    image: mysql:8.0
+    container_name: mysql-db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: admin
+      MYSQL_DATABASE: gestion_reservas
+    ports:
+      - "3307:3306"
+    volumes:
+      - db-data:/var/lib/mysql
+
+
+volumes:
+  db-data:
