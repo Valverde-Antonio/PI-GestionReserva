@@ -11,10 +11,7 @@ Se subirá el proyecto gestión de reservas realizada por Antonio Valverde y Ra�
 4. [Instalación y Configuración](#-instalación-y-configuración)
 5. [Estructura del Proyecto](#-estructura-del-proyecto)
 6. [Funcionalidades](#-funcionalidades)
-7. [Base de Datos](#-base-de-datos)
-8. [Documentación Adicional](#-documentación-adicional)
-9. [Contribución](#-contribución)
-10. [Licencia](#-licencia)
+
 
 ---
 
