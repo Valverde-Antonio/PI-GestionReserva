@@ -44,7 +44,8 @@ export class GestionarEspaciosComponent {
       const motivo = prompt(`¿Motivo para reservar ${this.aulaSeleccionada} para ${this.profesorSeleccionado} de ${hora} el ${this.fechaSeleccionada}?`);
       if (motivo && motivo.trim().length > 0) {
         turno.reservas[key] = motivo.trim();
-        console.log(`Reserva hecha: ${this.aulaSeleccionada} - ${hora} - ${this.fechaSeleccionada} - Profesor: ${this.profesorSeleccionado} - Motivo: ${motivo}`);
+        this.mensajeModal = `Reserva hecha: ${this.aulaSeleccionada} - ${hora} - ${this.fechaSeleccionada} - Profesor: ${this.profesorSeleccionado}`;
+        this.mostrarModal = true;
       } else {
         alert('Debes ingresar un motivo para la reserva.');
       }
@@ -66,4 +67,12 @@ export class GestionarEspaciosComponent {
     const key = `${this.aulaSeleccionada}-${this.profesorSeleccionado}`;
     return turno.reservas[key];
   }
+  mostrarModal: boolean = false;
+  mensajeModal: string = '';
+
+  cerrarModal(): void {
+    this.mostrarModal = false;
+    this.mensajeModal = '';
+  }
+
 }

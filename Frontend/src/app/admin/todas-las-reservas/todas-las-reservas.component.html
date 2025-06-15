@@ -1,76 +1,81 @@
 <app-header-admin [nombreUsuario]="'Admin'"></app-header-admin>
 
 <div class="historial-wrapper">
-    <h2>Todas las Reservas</h2>
+  <h2>Todas las Reservas</h2>
 
-    <div class="filtros mb-4">
-        <div class="row g-3">
-            <div class="col-md-4">
-                <label class="form-label">Filtrar por fecha:</label>
-                <input type="date" class="form-control" [(ngModel)]="filtroFecha" (change)="filtrarReservas()">
-            </div>
-            <div class="col-md-4">
-                <label class="form-label">Filtrar por tipo de material:</label>
-                <select class="form-select" [(ngModel)]="filtroMaterial" (change)="filtrarReservas()">
-                    <option value="">Todos</option>
-                    <option value="proyector">Proyector</option>
-                    <option value="portátil">Portátiles</option>
-                    <option value="pizarra">Pizarra Digital</option>
-                </select>
-            </div>
-            <div class="col-md-4">
-                <label class="form-label">Filtrar por profesor:</label>
-                <select class="form-select" [(ngModel)]="filtroProfesor" (change)="filtrarReservas()">
-                    <option *ngFor="let prof of profesores" [value]="prof">{{ prof }}</option>
-                </select>
-            </div>
-            <div class="col-12 d-flex justify-content-end">
-                <button class="btn btn-secondary mt-3" (click)="limpiarFiltros()">Limpiar filtros</button>
-            </div>
-            <div class="text-end mb-3">
-                <button class="btn btn-success" (click)="exportarPDFTodasReservas()" [disabled]="filtradoReservas.length === 0">
-                    Exportar a PDF
-                </button>
-            </div>
-        </div>
+  <div class="filtros mb-4">
+    <div class="row g-3">
+      <div class="col-md-4">
+        <label class="form-label">Filtrar por fecha:</label>
+        <input type="date" class="form-control" [(ngModel)]="filtroFecha" (change)="filtrarReservas()">
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">Filtrar por tipo de material:</label>
+        <select class="form-select" [(ngModel)]="filtroMaterial" (change)="filtrarReservas()">
+          <option value="">Todos</option>
+          <option value="proyector">Proyector</option>
+          <option value="portátil">Portátiles</option>
+          <option value="pizarra">Pizarra Digital</option>
+        </select>
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">Filtrar por aula:</label>
+        <select class="form-select" [(ngModel)]="filtroAula" (change)="filtrarReservas()">
+          <option value="">Todas</option>
+          <option *ngFor="let aula of aulas" [value]="aula">{{ aula }}</option>
+        </select>
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">Filtrar por profesor:</label>
+        <select class="form-select" [(ngModel)]="filtroProfesor" (change)="filtrarReservas()">
+          <option *ngFor="let prof of profesores" [value]="prof">{{ prof }}</option>
+        </select>
+      </div>
+      <div class="col-12 d-flex justify-content-end">
+        <button class="btn btn-secondary mt-3" (click)="limpiarFiltros()">Limpiar filtros</button>
+      </div>
+      <div class="text-end mb-3">
+        <button class="btn btn-success" (click)="exportarPDFTodasReservas()" [disabled]="filtradoReservas.length === 0">
+          Exportar a PDF
+        </button>
+      </div>
     </div>
+  </div>
 
-    <div *ngIf="filtradoReservas.length > 0; else noReservas">
-        <div class="reserva-card" *ngFor="let r of filtradoReservas">
-            <h3>{{ r.espacio }}</h3>
-            <p><strong>Recurso:</strong> {{ r.recurso }}</p>
-            <p><strong>Fecha:</strong> {{ r.fecha }}</p>
-            <p><strong>Hora:</strong> {{ r.horaInicio }} - {{ r.horaFin }}</p>
-            <p><strong>Profesor:</strong> {{ r.profesor }}</p>
-            <p><strong>Estado:</strong>
-                <span class="estado" [class.finalizada]="r.estado === 'Finalizada'"
-                      [class.cancelada]="r.estado === 'Cancelada'">
-                    {{ r.estado }}
-                </span>
-            </p>
-            <div class="d-flex justify-content-end gap-2 mt-3">
-                <button class="btn btn-outline-danger btn-sm" (click)="eliminarReserva(r)">
-                    <i class="bi bi-trash"></i> Eliminar
-                </button>
-                <button class="btn btn-outline-success btn-sm" (click)="modificarReserva(r)">
-                    <i class="bi bi-pencil-square"></i> Modificar
-                </button>
-                <button class="btn btn-outline-primary btn-sm" (click)="verDetalles(r)">
-                    <i class="bi bi-plus-square-fill"></i> Ver Detalles
-                </button>
-            </div>
-        </div>
+  <div *ngIf="filtradoReservas.length > 0; else noReservas">
+    <div class="reserva-card" *ngFor="let r of filtradoReservas">
+      <h3>{{ r.espacio }}</h3>
+      <p *ngIf="r.recurso"><strong>Recurso:</strong> {{ r.recurso }}</p>
+      <p *ngIf="!r.recurso"><strong>Motivo:</strong> {{ r.motivo || '-' }}</p>
+      <p><strong>Fecha:</strong> {{ r.fecha }}</p>
+      <p><strong>Hora:</strong> {{ r.horaInicio }} - {{ r.horaFin }}</p>
+      <p><strong>Profesor:</strong> {{ r.profesor }}</p>
+      <p><strong>Estado:</strong>
+        <span class="estado" [class.finalizada]="r.estado === 'Finalizada'"
+          [class.cancelada]="r.estado === 'Cancelada'">
+          {{ r.estado }}
+        </span>
+      </p>
+      <div class="d-flex justify-content-end gap-2 mt-3">
+        <button class="btn btn-outline-danger btn-sm" (click)="eliminarReserva(r)">
+          <i class="bi bi-trash"></i> Eliminar
+        </button>
+        <button class="btn btn-outline-success btn-sm" (click)="modificarReserva(r)">
+          <i class="bi bi-pencil-square"></i> Modificar
+        </button>
+      </div>
     </div>
+  </div>
 
-    <ng-template #noReservas>
-        <div class="sin-historial">
-            <p>No hay reservas con los filtros actuales.</p>
-            <img src="assets/img/no-history.png" alt="Sin reservas" />
-        </div>
-    </ng-template>
+  <ng-template #noReservas>
+    <div class="sin-historial">
+      <p>No hay reservas con los filtros actuales.</p>
+      <img src="assets/img/no-history.png" alt="Sin reservas" />
+    </div>
+  </ng-template>
 </div>
 
-<!-- MODAL FUNCIONAL ANGULAR -->
+<!-- MODAL ACTUALIZAR -->
 <div class="custom-backdrop" *ngIf="mostrarModalActualizar">
   <div class="custom-modal-box">
     <div class="modal-header bg-success text-white d-flex justify-content-between align-items-center px-3 py-2">
@@ -92,6 +97,10 @@
       <div class="mb-3">
         <label class="form-label">Recurso:</label>
         <input class="form-control" [(ngModel)]="reservaSeleccionada.recurso">
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Motivo:</label>
+        <input class="form-control" [(ngModel)]="reservaSeleccionada.motivo">
       </div>
       <div class="mb-3">
         <label class="form-label">Fecha:</label>
@@ -124,7 +133,8 @@
     </div>
   </div>
 </div>
-<!-- MODAL CONFIRMACIÓN ELIMINACIÓN -->
+
+<!-- MODAL ELIMINAR -->
 <div class="custom-backdrop" *ngIf="mostrarModalEliminar">
   <div class="custom-modal-box text-center">
     <div class="modal-header bg-success text-white d-flex justify-content-center py-2">

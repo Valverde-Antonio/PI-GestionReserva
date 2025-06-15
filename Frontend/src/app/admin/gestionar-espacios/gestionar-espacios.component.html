@@ -39,3 +39,19 @@
     </tbody>
   </table>
 </div>
+
+<!-- MODAL DE CONFIRMACIÓN DE RESERVA -->
+<div class="custom-backdrop" *ngIf="mostrarModal">
+  <div class="custom-modal-box">
+    <div class="custom-modal-header">
+      <span><i class="bi bi-check-circle-fill"></i> Reserva Confirmada</span>
+      <button class="btn btn-close btn-close-white" (click)="cerrarModal()"></button>
+    </div>
+    <div class="custom-modal-body">
+      <p class="mb-0">{{ mensajeModal }}</p>
+    </div>
+    <div class="custom-modal-footer">
+      <button class="btn btn-success" (click)="cerrarModal()">Aceptar</button>
+    </div>
+  </div>
+</div>

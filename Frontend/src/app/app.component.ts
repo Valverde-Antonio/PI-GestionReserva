@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { Router, NavigationEnd, RouterModule } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { HeaderComponent } from './header/header.component';
-import { HeaderAdminComponent } from './header-admin/header-admin.component'; // 👈 importa el header admin
+import { HeaderAdminComponent } from './header-admin/header-admin.component';
 
 
 @Component({

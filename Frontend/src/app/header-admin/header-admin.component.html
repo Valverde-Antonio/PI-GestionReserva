@@ -1,19 +1,19 @@
 <nav class="admin-navbar d-flex justify-content-between align-items-center px-4 flex-wrap">
   <div class="d-flex align-items-center gap-4 flex-wrap">
     <button class="btn d-md-none text-white" type="button" (click)="mostrarMenu = !mostrarMenu">
-      <i class="bi bi-list"></i>
+      <i class="bi bi-list fs-3"></i>
     </button>
-    <div class="d-flex flex-column flex-md-row gap-3" [class.d-none]="!mostrarMenu && pantallaPequena">
-      <a class="nav-link text-white d-flex align-items-center gap-1" routerLink="/admin">
+    <div [class.menu-open]="mostrarMenu || !pantallaPequena" class="admin-menu-links">
+      <a class="nav-link d-flex align-items-center gap-1" routerLink="/admin">
         <i class="bi bi-house-door-fill"></i> Inicio
       </a>
-      <a class="nav-link text-white d-flex align-items-center gap-1" routerLink="/admin-espacios">
-        <i class="bi bi-calendar-fill"></i> Aula
+      <a class="nav-link d-flex align-items-center gap-1" routerLink="/admin-espacios">
+        <i class="bi bi-calendar-fill"></i> Reservar Aula
       </a>
-      <a class="nav-link text-white d-flex align-items-center gap-1" routerLink="/admin-recursos">
-        <i class="bi bi-image"></i> Material
+      <a class="nav-link d-flex align-items-center gap-1" routerLink="/admin-recursos">
+        <i class="bi bi-image"></i> Reservar Material
       </a>
-      <a class="nav-link text-white d-flex align-items-center gap-1" routerLink="/admin-reservas">
+      <a class="nav-link d-flex align-items-center gap-1" routerLink="/admin-reservas">
         <i class="bi bi-search"></i> Ver Reservas
       </a>
     </div>
