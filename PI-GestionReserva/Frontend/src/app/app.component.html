@@ -1,0 +1,15 @@
+<!-- HEADER (solo si no estamos en login) -->
+<ng-container *ngIf="mostrarHeader">
+  <!-- Header para ADMIN -->
+  <app-header-admin *ngIf="rol === 'admin'; else headerNormal"></app-header-admin>
+
+  <!-- Header normal (profesor u otros) -->
+  <ng-template #headerNormal>
+    <app-header></app-header>
+  </ng-template>
+</ng-container>
+
+<!-- CONTENIDO PRINCIPAL -->
+<div class="contenido">
+  <router-outlet></router-outlet>
+</div>

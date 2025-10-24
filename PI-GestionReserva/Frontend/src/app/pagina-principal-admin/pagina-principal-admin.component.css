@@ -1,0 +1,78 @@
+:root {
+  --verde-principal: #3c7e66;
+  --verde-hover: #2f5f50;
+  --fondo: #f2f6f4;
+}
+
+body {
+  margin: 0;
+  font-family: 'Segoe UI', sans-serif;
+  background-color: var(--fondo);
+}
+
+.reserva-wrapper {
+  max-width: 1200px;
+  margin: auto;
+  padding: 2rem 1rem;
+}
+
+.reserva-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.reserva-header h1 {
+  font-size: 2rem;
+  color: var(--verde-principal);
+  margin-bottom: 0.5rem;
+}
+
+.reserva-header p {
+  font-size: 1.1rem;
+  color: #555;
+}
+
+.reserva-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 2rem;
+  justify-items: center;
+}
+
+.reserva-card {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  text-align: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  transition: transform 0.3s ease;
+  max-width: 400px;
+  width: 100%;
+}
+
+.reserva-card:hover {
+  transform: translateY(-4px);
+}
+
+.reserva-card img {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+  border-radius: 10px;
+  margin-bottom: 1rem;
+}
+
+.reserva-card h2 {
+  color: var(--verde-principal);
+  margin-bottom: 0.5rem;
+}
+
+.reserva-card p {
+  color: #444;
+  font-size: 0.95rem;
+  margin-bottom: 1.2rem;
+}
+
+.btn-container {
+  margin-top: 1rem;
+}
