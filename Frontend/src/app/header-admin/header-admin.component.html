@@ -1,0 +1,31 @@
+<nav class="admin-navbar d-flex justify-content-between align-items-center px-4 flex-wrap py-2">
+  <div class="d-flex align-items-center gap-4 flex-wrap">
+    <button class="btn d-md-none text-white" type="button" (click)="mostrarMenu = !mostrarMenu">
+      <i class="bi bi-list fs-3"></i>
+    </button>
+
+    <div [class.d-none]="!mostrarMenu && pantallaPequena" class="admin-menu-links d-flex flex-column flex-md-row gap-3">
+      <a class="nav-link text-white d-flex align-items-center gap-1" routerLink="/admin">
+        <i class="bi bi-house-door-fill"></i> Inicio
+      </a>
+      <a class="nav-link text-white d-flex align-items-center gap-1" routerLink="/admin-espacios">
+        <i class="bi bi-calendar-fill"></i> Reservar Aula
+      </a>
+      <a class="nav-link text-white d-flex align-items-center gap-1" routerLink="/admin-recursos">
+        <i class="bi bi-image"></i> Reservar Material
+      </a>
+      <a class="nav-link text-white d-flex align-items-center gap-1" routerLink="/admin-reservas">
+        <i class="bi bi-search"></i> Ver Reservas
+      </a>
+    </div>
+  </div>
+
+  <div class="d-flex align-items-center gap-3 mt-2 mt-md-0">
+    <span class="text-white d-flex align-items-center gap-1">
+      <i class="bi bi-person-fill"></i> Bienvenido directivo {{ authService.getUsuario() }}
+    </span>
+    <button class="btn btn-outline-light btn-sm d-flex align-items-center gap-1" (click)="cerrarSesion()">
+      <i class="bi bi-escape"></i> Cerrar sesión
+    </button>
+  </div>
+</nav>

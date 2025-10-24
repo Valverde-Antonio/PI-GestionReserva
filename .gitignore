@@ -1,0 +1,25 @@
+# Node / Angular
+Frontend/node_modules/
+Frontend/dist/
+Frontend/.angular/
+Frontend/.cache/
+
+# Java / Spring
+Backend/target/
+Backend/*.iml
+*.log
+
+# Binaries y empaquetados
+*.jar
+*.zip
+*.tar
+*.gz
+
+# SO / IDE
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Docker
+**/.env

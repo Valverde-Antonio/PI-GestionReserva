@@ -1,0 +1,91 @@
+<app-header></app-header>
+
+<div class="container mt-4">
+  <h2 class="mb-4 text-success">Reservar Material</h2>
+
+  <div class="mb-3">
+    <label for="fecha" class="form-label">Fecha</label>
+    <input
+      id="fecha"
+      type="date"
+      class="form-control"
+      [(ngModel)]="fechaSeleccionada"
+      (change)="cargarReservas()"
+    />
+  </div>
+
+  <div class="mb-3">
+    <label for="material" class="form-label">Material</label>
+    <select
+      id="material"
+      class="form-select"
+      [(ngModel)]="materialSeleccionado"
+      (change)="cargarReservas()"
+    >
+      <option *ngFor="let material of materiales" [ngValue]="material">
+        {{ material.nombre }}
+      </option>
+    </select>
+  </div>
+
+  <!-- Eliminado bloque de cantidad -->
+
+  <table class="table table-striped table-bordered">
+    <thead class="table-success text-center">
+      <tr>
+        <th>Horario</th>
+        <th>Estado</th>
+        <th>Acción</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let turno of turnos">
+        <td class="align-middle text-center"><strong>{{ turno }}</strong></td>
+        <td class="align-middle text-center">
+          <ng-container *ngIf="isReservado(turno); else libre">
+            <!-- Mostrar "Reservado por ti" si es la reserva propia -->
+            <span *ngIf="esReservaPropia(turno)">Reservado por ti</span>
+            <!-- Mostrar el nombre del profesor si la reserva no es propia -->
+            <span *ngIf="!esReservaPropia(turno)">
+              Reservado por {{ getReservaPorHora(turno)?.nombreProfesor }}
+            </span>
+          </ng-container>
+          <ng-template #libre>Disponible</ng-template>
+        </td>
+        <td class="align-middle text-center">
+          <!-- Botón "Reservar" solo si el turno está disponible -->
+          <ng-container *ngIf="!isReservado(turno)">
+            <button class="btn btn-success btn-sm" (click)="reservar(turno)">
+              Reservar
+            </button>
+          </ng-container>
+
+          <!-- Botón de "Cancelar" solo si el turno está reservado por el usuario logueado -->
+          <ng-container *ngIf="isReservado(turno)">
+            <button
+              *ngIf="esReservaPropia(turno)"
+              class="btn btn-danger btn-sm"
+              (click)="cancelarReserva(turno)"
+            >
+              Cancelar
+            </button>
+            <ng-container *ngIf="!esReservaPropia(turno)">
+              <button class="btn btn-danger btn-sm" disabled>
+                No puedes cancelar
+              </button>
+            </ng-container>
+          </ng-container>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div *ngIf="mostrarModal" class="modal-backdrop">
+    <div class="modal-dialog">
+      <div class="modal-content p-3 text-center">
+        <p>{{ mensajeModal }}</p>
+        <button class="btn btn-success" (click)="cerrarModal()">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>
