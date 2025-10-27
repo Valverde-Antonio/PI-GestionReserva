@@ -29,7 +29,8 @@ export class AuthService {
       tap((profesor) => {
         if (profesor && profesor.roles?.length > 0) {
           // ✅ soporta ambas variantes del backend
-          const rol = profesor.roles[0]?.nombreRol ?? profesor.roles[0]?.nombre_rol;
+          const rol = ''
+          //profesor.roles[0]?.nombreRol ?? profesor.roles[0]?.nombre_rol;
           if (rol) {
             this.setUsuario(profesor.usuario);
             this.setRol(rol);

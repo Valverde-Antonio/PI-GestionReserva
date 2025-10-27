@@ -1,0 +1,25 @@
+COSAS A ARREGLAR
+
+- GENERAL
+	- Redirigir a localhost:XXXX cada vez que encuentre una url desconocida para evitar errores 4xx
+
+- HEADER
+	- Dejar solo 1 y en función del rol poner el nombre y las opciones.
+	
+-LOGIN
+	-Poner modal para error en las credenciales
+	-Dirigir a profesores a la zona de profesores y a directivos a la zona de directivos(admin)
+
+-PROFESOR
+	-Arreglar header
+	-Poner que se puede reservar por tramos horarios las aulas, cargan bien en el apartado de reservas
+	-En reserva de material no deja reservar, pone que ya esta reservado cuando en accion pone reservar
+
+-DIRECTIVO
+	-Arreglar reseras de materiales
+	-Arreglar reservas de aulas
+	-Imprimir bien las reservas después de guardarlas en el apartado de reservas
+
+-VER RESERVAS
+	-Darle un estilo mas visual y cómodo
+	-Exportar PDF mas bonito y con el sello de almudeyne

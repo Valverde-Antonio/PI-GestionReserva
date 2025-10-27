@@ -6,7 +6,7 @@ import { RouterModule } from '@angular/router';
 @Component({
   selector: 'app-pagina-principal-admin',
   standalone: true,
-  imports: [HeaderAdminComponent, CommonModule, RouterModule],
+  imports: [ HeaderAdminComponent, CommonModule, RouterModule],
   templateUrl: './pagina-principal-admin.component.html',
   styleUrls: ['./pagina-principal-admin.component.css'] // ← ✅ CORREGIDO
 })

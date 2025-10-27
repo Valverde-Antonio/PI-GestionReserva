@@ -31,12 +31,17 @@ login(): void {
           : '';
 
       // Detectar si es directivo (equipo) o profesor
-      const rolDetectado = rolNombre === 'directivo' ? 'equipo' : 'profesor';
-      this.authService.setRol(rolDetectado);
+let rolDetectado: string | null = null;
+if (rolNombre === 'directivo') {
+  rolDetectado = 'directivo';
+} else if (rolNombre === 'profesor') {
+  rolDetectado = 'profesor';
+}
+      this.authService.setRol(rolDetectado ?? '');
 
       if (rolDetectado === 'profesor') {
         this.router.navigate(['/paginaPrincipal']);
-      } else if (rolDetectado === 'equipo') {
+      } else if (rolDetectado === 'directivo') {
         this.router.navigate(['/admin']);
       } else {
         alert('Usuario sin rol asignado. Contacte con el administrador.');

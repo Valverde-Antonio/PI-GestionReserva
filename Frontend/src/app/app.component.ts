@@ -9,7 +9,7 @@ import { AuthService } from './services/auth.service';
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [NgIf, HeaderComponent, HeaderAdminComponent, RouterOutlet],
+  imports: [NgIf, HeaderAdminComponent, RouterOutlet],
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.css']
 })
