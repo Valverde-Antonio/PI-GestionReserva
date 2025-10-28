@@ -12,58 +12,48 @@ import { Router, RouterModule } from '@angular/router';
   styleUrls: ['./login.component.css']
 })
 export class LoginComponent {
-  usuario: string = '';
-  clave: string = '';
-  mostrarPassword: boolean = false;
+  usuario = '';
+  clave = '';
+  mostrarPassword = false;
 
   constructor(private authService: AuthService, private router: Router) {}
 
-login(): void {
-  this.authService.login(this.usuario, this.clave).subscribe({
-    next: (profesor: Profesor) => {
-      this.authService.setUsuario(profesor.usuario);
+  login(): void {
+    console.groupCollapsed('%c[LoginComponent] login() → suscripción', 'color:#6a0dad');
+    this.authService.login(this.usuario, this.clave).subscribe({
+      next: (_profesor: Profesor) => {
+        const rol = this.authService.getRol();
+        console.info('[LoginComponent] Rol tras login =>', rol || '(vacío)');
 
-      // Extraer correctamente el nombre del rol de la estructura 'roles' y 'nombre_rol'
-      const rolNombre = profesor.roles &&
-        profesor.roles.length > 0 &&
-        profesor.roles[0].nombre_rol
-          ? profesor.roles[0].nombre_rol.toLowerCase()
-          : '';
-
-      // Detectar si es directivo (equipo) o profesor
-let rolDetectado: string | null = null;
-if (rolNombre === 'directivo') {
-  rolDetectado = 'directivo';
-} else if (rolNombre === 'profesor') {
-  rolDetectado = 'profesor';
-}
-      this.authService.setRol(rolDetectado ?? '');
-
-      if (rolDetectado === 'profesor') {
-        this.router.navigate(['/paginaPrincipal']);
-      } else if (rolDetectado === 'directivo') {
-        this.router.navigate(['/admin']);
-      } else {
-        alert('Usuario sin rol asignado. Contacte con el administrador.');
+        if (rol === 'profesor') {
+          console.info('[LoginComponent] Navegando a /paginaPrincipal'); // ← CORREGIDO
+          this.router.navigate(['/paginaPrincipal']); // ← CORREGIDO
+        } else if (rol === 'directivo') {
+          console.info('[LoginComponent] Navegando a /paginaPrincipalAdmin'); // ← CORREGIDO
+          this.router.navigate(['/paginaPrincipalAdmin']); // ← CORREGIDO
+        } else {
+          console.error('[LoginComponent] Usuario sin rol asignado. Mostrar alerta.');
+          alert('Usuario sin rol asignado. Contacte con el administrador.');
+        }
+        console.groupEnd();
+      },
+      error: (err) => {
+        console.groupCollapsed('%c[LoginComponent] Error en login', 'color:#e00');
+        console.error(err);
+        console.groupEnd();
+        alert('Credenciales incorrectas');
       }
-    },
-    error: () => {
-      alert('Credenciales incorrectas');
-    }
-  });
-}
-
-
-
-
-
+    });
+  }
 
   togglePassword(): void {
     this.mostrarPassword = !this.mostrarPassword;
+    console.debug('[LoginComponent] togglePassword ->', this.mostrarPassword);
   }
 
   limpiar(): void {
     this.usuario = '';
     this.clave = '';
+    console.debug('[LoginComponent] limpiar() -> campos vaciados');
   }
 }

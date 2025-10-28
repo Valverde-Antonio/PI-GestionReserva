@@ -4,13 +4,12 @@ import { FormsModule } from '@angular/forms';
 import { ReservaService, ReservaEspacioDTO } from '../../services/reserva.service';
 import { EspacioService } from '../../services/espacio.service';
 import { AuthService } from '../../services/auth.service';
-import { HeaderComponent } from '../../header/header.component';
 
 
 @Component({
   selector: 'app-reservar-aula',
   standalone: true,
-  imports: [CommonModule, FormsModule, HeaderComponent],
+  imports: [CommonModule, FormsModule, ],
   templateUrl: './reservar-aula.component.html',
   styleUrls: ['./reservar-aula.component.css']
 })

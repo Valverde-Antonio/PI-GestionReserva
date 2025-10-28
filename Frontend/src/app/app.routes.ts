@@ -24,7 +24,7 @@ export const routes: Routes = [
   { path: 'paginaPrincipal', component: PaginaPrincipalComponent },
 
   // ADMIN
-  { path: 'admin', component: PaginaPrincipalAdminComponent },
+  { path: 'paginaPrincipalAdmin', component: PaginaPrincipalAdminComponent },
   { path: 'admin-espacios', component: GestionarEspaciosComponent },
   { path: 'admin-recursos', component: GestionarRecursosComponent },
   { path: 'admin-reservas', component: TodasLasReservasComponent },

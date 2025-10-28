@@ -11,7 +11,7 @@ export class HttpBaseService {
 
   constructor(private http: HttpClient) {}
 
-  get<T>(url: string) {
+  get<T>(url: string, p0: { params: { nombre: string; }; }) {
     return this.http.get<T>(url, { headers: this.headers });
   }
 

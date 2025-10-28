@@ -4,12 +4,11 @@ import { FormsModule } from '@angular/forms';
 import { ReservaService, ReservaRecursoDTO } from '../../services/reserva.service';
 import { RecursoService } from '../../services/recurso.service';
 import { AuthService } from '../../services/auth.service';
-import { HeaderAdminComponent } from '../../header-admin/header-admin.component';
 
 @Component({
   selector: 'app-gestionar-recursos',
   standalone: true,
-  imports: [CommonModule, FormsModule, HeaderAdminComponent],
+  imports: [CommonModule, FormsModule, ],
   templateUrl: './gestionar-recursos.component.html',
   styleUrls: ['./gestionar-recursos.component.css'],
 })

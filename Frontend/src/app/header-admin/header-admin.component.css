@@ -1,39 +1,53 @@
-.admin-navbar {
+/* Base navbar */
+.app-navbar{
   position: fixed;
-  top: 0;
-  left: 0;
+  inset: 0 0 auto 0;
+  height: var(--navbar-h, 64px);             /* fallback 64px */
+  background-color: var(--brand-700, #1f6f3d); /* fallback verde directo */
+  z-index: 1000;
+  box-shadow: 0 2px 8px rgba(0,0,0,.12);
+  display: flex;
+  align-items: center;
+  padding: 0 .75rem;
+}
+
+/* wrapper interno */
+.app-navbar__inner{
   width: 100%;
-  background-color: #153529;
-  z-index: 9999;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
 }
 
-.admin-navbar .nav-link {
-  color: white;
-  font-weight: 500;
-  transition: color 0.3s ease;
+/* enlaces */
+.app-menu-links .nav-link{
+  color:#fff !important;
+  font-weight:500;
+  text-decoration:none;
+  display:inline-flex;
+  align-items:center;
+  gap:.35rem;
+  padding:.35rem .5rem;
+  border-radius:.375rem;
+  transition:background-color .2s ease,color .2s ease;
+}
+.app-menu-links .nav-link:hover,
+.app-menu-links .nav-link:focus{
+  background-color: var(--brand-600, #2a8d56);
+  color:#fff !important;
 }
 
-.admin-navbar .nav-link:hover {
-  color: #a9dfbf;
+/* botón outline */
+.btn-outline-light{ color:#fff; border-color:#fff; }
+.btn-outline-light:hover{ background:#fff; color:var(--brand-700,#1f6f3d); }
+
+/* burger sólo en móvil */
+.app-burger{ display:none; color:#fff; }
+@media (max-width: 767.98px){
+  .app-burger{ display:inline-flex; }
+  .app-menu-links{ display:none; flex-direction:column; width:100%; gap:.5rem; margin-top:.5rem; }
+  .app-menu-links.is-open{ display:flex !important; }
 }
 
-.admin-navbar .btn-outline-light {
-  color: white;
-  border-color: white;
-}
-
-.admin-navbar .btn-outline-light:hover {
-  background-color: white;
-  color: #153529;
-}
-
-@media (max-width: 767.98px) {
-  .admin-menu-links {
-    display: none;
-    width: 100%;
-  }
-
-  .admin-menu-links.d-flex {
-    display: flex !important;
-  }
-}
+/* derecha */
+.app-right{ margin-left:auto; display:inline-flex; align-items:center; gap:.75rem; color:#fff; }

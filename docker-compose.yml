@@ -11,8 +11,7 @@ services:
       - "3310:3306"
     volumes:
       - db_data:/var/lib/mysql
-      - ./db:/docker-entrypoint-initdb.d:ro 
-
+      - ./db:/docker-entrypoint-initdb.d:ro
     restart: always
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-padmin"]
@@ -41,10 +40,17 @@ services:
   frontend:
     build:
       context: ./Frontend
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.dev
     container_name: pi-frontend
     ports:
-      - "4200:80"
+      - "4200:4200"
+    environment:
+      NODE_ENV: development
+      CHOKIDAR_USEPOLLING: "true"
+      WATCHPACK_POLLING: "true"
+    volumes:
+      - ./Frontend:/app
+      - /app/node_modules
     depends_on:
       - backend
     restart: always
@@ -63,4 +69,4 @@ services:
     restart: always
 
 volumes:
-  db_data:
+  db_data: {}

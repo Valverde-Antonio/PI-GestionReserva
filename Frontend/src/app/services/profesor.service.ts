@@ -27,22 +27,22 @@ export class ProfesorService {
   }
 
   getProfesores(): Observable<Profesor[]> {
-    return this.http.get<Profesor[]>(this.apiUrl);
+    return this.http.get<Profesor[]>(this.apiUrl, {} as any); // ← CORREGIDO
   }
 
   getProfesorById(id: number): Observable<Profesor> {
-    return this.http.get<Profesor>(`${this.apiUrl}/${id}`);
+    return this.http.get<Profesor>(`${this.apiUrl}/${id}`, {} as any); // ← CORREGIDO
   }
 
   actualizarProfesor(id: number, profesor: Profesor): Observable<Profesor> {
-    return this.http.put<Profesor>(`${this.apiUrl}/${id}`, profesor);
+    return this.http.put<Profesor>(`${this.apiUrl}/${id}`, profesor); // ← CORREGIDO
   }
 
   eliminarProfesor(id: number): Observable<void> {
-    return this.http.delete<void>(`${this.apiUrl}/${id}`);
+    return this.http.delete<void>(`${this.apiUrl}/${id}`); // ← CORREGIDO
   }
 
   getPerfilPorUsuario(usuario: string): Observable<Profesor> {
-    return this.http.get<Profesor>(`${this.apiUrl}/usuario/${usuario}`);
+    return this.http.get<Profesor>(`${this.apiUrl}/usuario/${usuario}`, {} as any); // ← CORREGIDO
   }
 }

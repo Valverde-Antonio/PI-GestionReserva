@@ -1,1 +1,18 @@
-/* You can add global styles to this file, and also import other style files */
+/* src/styles.css */
+:root{
+  --brand-700: #1f6f3d;   /* fondo navbar */
+  --brand-600: #2a8d56;   /* hover */
+  --brand-500: #36a86a;   /* acentos */
+  --brand-50:  #e7f4ec;   /* fondos suaves */
+  --navbar-h:  64px;      /* alto de la barra */
+}
+
+/* ✅ SOLUCIÓN: Aplicar padding solo cuando existe header */
+body:has(.app-navbar) { 
+  padding-top: var(--navbar-h); 
+}
+
+/* O si prefieres una clase condicional en body */
+body.has-header { 
+  padding-top: var(--navbar-h); 
+}

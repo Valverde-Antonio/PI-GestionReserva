@@ -1,7 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { HeaderAdminComponent } from '../../header-admin/header-admin.component';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { ReservaService } from '../../services/reserva.service';
@@ -12,7 +11,7 @@ import { ProfesorService } from '../../services/profesor.service';
 @Component({
   selector: 'app-todas-las-reservas',
   standalone: true,
-  imports: [CommonModule, FormsModule, HeaderAdminComponent],
+  imports: [CommonModule, FormsModule, ],
   templateUrl: './todas-las-reservas.component.html',
   styleUrls: ['./todas-las-reservas.component.css']
 })

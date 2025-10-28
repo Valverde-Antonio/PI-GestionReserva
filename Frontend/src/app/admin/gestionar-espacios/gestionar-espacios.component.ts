@@ -4,12 +4,11 @@ import { FormsModule } from '@angular/forms';
 import { ReservaService, ReservaEspacioDTO } from '../../services/reserva.service';
 import { EspacioService } from '../../services/espacio.service';
 import { AuthService } from '../../services/auth.service';
-import { HeaderAdminComponent } from '../../header-admin/header-admin.component';
 
 @Component({
   selector: 'app-gestionar-espacios',
   standalone: true,
-  imports: [CommonModule, FormsModule, HeaderAdminComponent],
+  imports: [CommonModule, FormsModule, ],
   templateUrl: './gestionar-espacios.component.html',
   styleUrls: ['./gestionar-espacios.component.css']
 })
