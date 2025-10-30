@@ -17,9 +17,12 @@ export class ReservarMaterialComponent implements OnInit {
   fechaSeleccionada: string = '';
   materialSeleccionado: any = null;
   materiales: any[] = [];
-  turnos: string[] = [];
   reservas: ReservaRecursoDTO[] = [];
 
+  // ✅ Tramos fijos (hora de INICIO). La vista los mostrará como HH:mm-HH:mm
+  turnos: string[] = ['08:00', '09:00', '10:00', '11:30', '12:30', '13:30'];
+
+  // Modal
   mostrarModal: boolean = false;
   mensajeModal: string = '';
   modoConfirmacion: boolean = false;
@@ -31,29 +34,38 @@ export class ReservarMaterialComponent implements OnInit {
     private recursoService: RecursoService
   ) {}
 
+  // ✅ Utils horarios (mismo criterio que en aulas) --------------------------
+  private pad(n: number) { return n.toString().padStart(2, '0'); }
+
+  private addMinutes(hhmm: string, minutes: number) {
+    const [h, m] = hhmm.split(':').map(Number);
+    const d = new Date(0, 0, 0, h, (m || 0) + minutes);
+    return `${this.pad(d.getHours())}:${this.pad(d.getMinutes())}`;
+  }
+
+  /** Devuelve HH:mm-HH:mm (sin espacios) */
+  private normalizaTramo(inicio: string, fin?: string, duracionMin = 60) {
+    const start = (inicio ?? '').toString().replace(/\s/g, '');
+    const end = (fin ?? this.addMinutes(start, duracionMin)).toString().replace(/\s/g, '');
+    return `${start}-${end}`;
+  }
+
+  /** Quita espacios; si viene solo HH:mm, agrega +60m -> HH:mm-HH:mm */
+  private canonizaTramo(anyStr: string) {
+    const limpio = (anyStr ?? '').toString().replace(/\s/g, '');
+    if (/^\d{2}:\d{2}$/.test(limpio)) return `${limpio}-${this.addMinutes(limpio, 60)}`;
+    return limpio;
+  }
+  // -------------------------------------------------------------------------
+
   ngOnInit(): void {
     console.log('✅ Inicializado ReservarMaterialComponent');
-
-    // 🔍 DEBUG: Verificar localStorage
-    console.log('🔍 Contenido completo del localStorage:');
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      const value = localStorage.getItem(key!);
-      console.log(`  ${key}: ${value} (tipo: ${typeof value})`);
-    }
-
-    // Cargar turnos desde el backend
-    this.reservaService.getTurnos().subscribe({
-      next: (data) => {
-        this.turnos = data;
-        console.log('🕐 Turnos cargados desde el backend:', this.turnos);
-      },
-      error: (err) => {
-        console.error('❌ Error al cargar los turnos:', err);
-      },
-    });
-
     this.cargarMateriales();
+  }
+
+  // Mostrar etiqueta bonita HH:mm-HH:mm en la tabla
+  formatTramo(horaInicio: string): string {
+    return this.normalizaTramo(horaInicio);
   }
 
   cargarMateriales(): void {
@@ -72,6 +84,9 @@ export class ReservarMaterialComponent implements OnInit {
     });
   }
 
+  onFechaChange(): void { this.cargarReservas(); }
+  onMaterialChange(): void { this.cargarReservas(); }
+
   cargarReservas(): void {
     if (!this.fechaSeleccionada || !this.materialSeleccionado) return;
 
@@ -81,18 +96,12 @@ export class ReservarMaterialComponent implements OnInit {
       .buscarReservasRecurso(this.fechaSeleccionada, this.materialSeleccionado.nombre)
       .subscribe({
         next: (data) => {
-          this.reservas = data;
-          console.log('📋 Reservas cargadas:', this.reservas);
-
-          // Debug adicional
-          this.reservas.forEach((reserva, index) => {
-            console.log(`Reserva ${index}:`, {
-              idReserva: reserva.idReserva,
-              idProfesor: reserva.idProfesor,
-              tramoHorario: reserva.tramoHorario,
-              nombreProfesor: reserva.nombreProfesor,
-            });
-          });
+          // ✅ Canoniza tramoHorario al llegar del backend
+          this.reservas = (data || []).map(r => ({
+            ...r,
+            tramoHorario: this.canonizaTramo(r.tramoHorario)
+          }));
+          console.log('📋 Reservas cargadas (canonizadas):', this.reservas);
         },
         error: () => {
           this.mostrarModalConMensaje('Error al cargar reservas');
@@ -101,71 +110,42 @@ export class ReservarMaterialComponent implements OnInit {
       });
   }
 
-  obtenerHoraFin(hora: string): string {
-    const horaInt = parseInt(hora.split(':')[0]);
-    return `${(horaInt + 1).toString().padStart(2, '0')}:00`;
+  // ✅ Comparación exacta con tramo canónico
+  isReservado(horaInicio: string): boolean {
+    const tramo = this.normalizaTramo(horaInicio);
+    return this.reservas.some(r => this.canonizaTramo(r.tramoHorario) === tramo);
   }
 
-  isReservado(hora: string): boolean {
-    const estado = this.reservas.some((r) => r.tramoHorario.startsWith(hora));
-    console.log(`🔄 Verificando si el turno ${hora} está reservado: ${estado}`);
-    return estado;
-  }
-
-  esReservaPropia(hora: string): boolean {
-    const reserva = this.getReservaPorHora(hora);
-
-    if (!reserva) {
-      console.log(`❌ No se encontró reserva para el turno: ${hora}`);
-      return false;
-    }
-
-    // Obtenemos el nombre completo desde localStorage
-    const usuarioLocal = localStorage.getItem('nombreCompleto');
-    if (!usuarioLocal) {
-      console.error('❌ Usuario no válido en localStorage');
-      return false;
-    }
-
-    if (!reserva.nombreProfesor) {
-      console.error('❌ La reserva no tiene nombreProfesor:', reserva);
-      return false;
-    }
-
-    console.log(`🔍 Comparando Usuarios - localStorage: ${usuarioLocal}, reserva: ${reserva.nombreProfesor}`);
-
-    const esPropia = reserva.nombreProfesor === usuarioLocal;
-
-    console.log(`👤 ¿Reserva propia? Turno: ${hora} → ${esPropia}`, {
-      reserva: reserva,
-      usuarioLocal: usuarioLocal,
-      nombreProfesor: reserva.nombreProfesor,
-      comparacion: esPropia
-    });
-
+  esReservaPropia(horaInicio: string): boolean {
+    const r = this.getReservaPorHora(horaInicio);
+    const idProfesor = Number(localStorage.getItem('idProfesor')) || 0;
+    const esPropia = Number(r?.idProfesor) === idProfesor;
+    console.log(`👤 ¿Reserva propia? Turno: ${horaInicio} → ${esPropia}`, r);
     return esPropia;
   }
 
-  getReservaPorHora(hora: string): ReservaRecursoDTO | undefined {
-    const reserva = this.reservas.find((r) => r.tramoHorario.startsWith(hora));
-    console.log(`🔍 Reserva encontrada para ${hora}:`, reserva);
+  getReservaPorHora(horaInicio: string): ReservaRecursoDTO | undefined {
+    const tramo = this.normalizaTramo(horaInicio);
+    const reserva = this.reservas.find(r => this.canonizaTramo(r.tramoHorario) === tramo);
+    console.log(`🔍 Reserva encontrada para ${horaInicio}:`, reserva);
     return reserva;
   }
 
-  reservar(hora: string): void {
+  reservar(horaInicio: string): void {
     const idProfesor = Number(localStorage.getItem('idProfesor')) || 1;
-    const usuarioLocal = localStorage.getItem('usuario') || '';
+
+    // ✅ Construye tramo canónico HH:mm-HH:mm
+    const tramoHorario = this.normalizaTramo(horaInicio);
 
     const reserva: ReservaRecursoDTO = {
       fecha: this.fechaSeleccionada,
-      tramoHorario: hora,
+      tramoHorario,
       idRecurso: this.materialSeleccionado.idRecurso,
-      idProfesor: idProfesor,
-      nombreProfesor: usuarioLocal,
-      // ❌ cantidad: eliminado para cumplir el esquema del profesor
+      idProfesor: idProfesor
+      // nombreProfesor opcional; el backend puede rellenarlo si quiere
     };
 
-    console.log('🟢 Creando reserva:', reserva);
+    console.log('🟢 Creando reserva de recurso (normalizada):', reserva);
 
     this.reservaService.crearReservaRecurso(reserva).subscribe({
       next: () => {
@@ -183,22 +163,23 @@ export class ReservarMaterialComponent implements OnInit {
     });
   }
 
-  cancelarReserva(hora: string): void {
-    const reserva = this.getReservaPorHora(hora);
+  cancelarReserva(horaInicio: string): void {
+    const reserva = this.getReservaPorHora(horaInicio);
     if (!reserva) return;
 
-    console.log('🔴 Cancelando reserva:', reserva);
-
-    if (!this.esReservaPropia(hora)) {
+    if (!this.esReservaPropia(horaInicio)) {
       console.log('❌ No se puede cancelar una reserva de otro usuario');
       this.mostrarModalConMensaje('No puedes cancelar una reserva que no es tuya');
       return;
     }
 
+    console.log('🔴 Cancelando reserva:', reserva);
+
     this.reservaService.eliminarReservaRecurso(reserva.idReserva!).subscribe({
       next: () => {
         console.log('✅ Reserva eliminada correctamente');
-        this.reservas = this.reservas.filter((r) => r.idReserva !== reserva.idReserva);
+        // Refresca desde backend para evitar desalineaciones
+        this.cargarReservas();
         this.mostrarModalConMensaje('Reserva cancelada');
       },
       error: (err) => {
