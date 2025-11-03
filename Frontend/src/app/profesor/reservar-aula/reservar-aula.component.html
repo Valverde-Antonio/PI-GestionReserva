@@ -1,16 +1,18 @@
-
-
 <div class="container mt-4">
   <h2 class="mb-4 text-success">Reservar Aula</h2>
 
   <div class="mb-3">
     <label for="fecha" class="form-label">Fecha</label>
-    <input id="fecha" type="date" class="form-control" [(ngModel)]="fechaSeleccionada" (change)="cargarReservas()" />
+    <input id="fecha" type="date" class="form-control"
+           [(ngModel)]="fechaSeleccionada"
+           (change)="onFechaChange()" />
   </div>
 
   <div class="mb-3">
     <label for="aula" class="form-label">Aula</label>
-    <select id="aula" class="form-select" [(ngModel)]="aulaSeleccionada" (change)="cargarReservas()">
+    <select id="aula" class="form-select"
+            [(ngModel)]="aulaSeleccionada"
+            (change)="onAulaChange()">
       <option *ngFor="let aula of aulas" [ngValue]="aula">{{ aula.nombre }}</option>
     </select>
   </div>
@@ -25,37 +27,44 @@
     </thead>
     <tbody>
       <tr *ngFor="let turno of turnos">
-        <td class="align-middle text-center"><strong>{{ turno }}</strong></td>
+        <!-- Mostramos HH:mm-HH:mm generado por el componente -->
+        <td class="align-middle text-center"><strong>{{ formatTramo(turno) }}</strong></td>
+
         <td class="align-middle text-center">
           <ng-container *ngIf="isReservado(turno); else libre">
             <span *ngIf="esReservaPropia(turno)">Reservado por ti</span>
-            <span *ngIf="!esReservaPropia(turno)">Reservado por {{ getReservaPorHora(turno)?.nombreProfesor }}</span>
+            <span *ngIf="!esReservaPropia(turno)">
+              Reservado por {{ getReservaPorHora(turno)?.nombreProfesor || 'otro usuario' }}
+            </span>
           </ng-container>
           <ng-template #libre>
             Disponible
           </ng-template>
         </td>
-      <td class="align-middle text-center">
-  <ng-container *ngIf="isReservado(turno); else botonReservar">
-    <button
-      *ngIf="esReservaPropia(turno)"
-      class="btn btn-danger btn-sm"
-      (click)="cancelarReserva(turno)"
-    >
-      Cancelar
-    </button>
-  </ng-container>
-  <ng-template #botonReservar>
-    <button class="btn btn-success btn-sm" (click)="reservar(turno)">
-      Reservar
-    </button>
-  </ng-template>
-</td>
 
+        <td class="align-middle text-center">
+          <ng-container *ngIf="isReservado(turno); else botonReservar">
+            <button *ngIf="esReservaPropia(turno)"
+                    class="btn btn-danger btn-sm"
+                    (click)="cancelarReserva(turno)">
+              Cancelar
+            </button>
+            <button *ngIf="!esReservaPropia(turno)"
+                    class="btn btn-secondary btn-sm" disabled>
+              No disponible
+            </button>
+          </ng-container>
+          <ng-template #botonReservar>
+            <button class="btn btn-success btn-sm" (click)="reservar(turno)">
+              Reservar
+            </button>
+          </ng-template>
+        </td>
       </tr>
     </tbody>
   </table>
 
+  <!-- Modal simple -->
   <div *ngIf="mostrarModal" class="modal-backdrop">
     <div class="modal-dialog">
       <div class="modal-content p-3 text-center">
