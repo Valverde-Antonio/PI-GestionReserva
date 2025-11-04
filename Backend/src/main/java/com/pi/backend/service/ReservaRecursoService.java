@@ -10,6 +10,7 @@ import com.pi.backend.repository.RecursoRepository;
 import com.pi.backend.repository.ProfesorRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.dao.DataIntegrityViolationException;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -32,19 +33,89 @@ public class ReservaRecursoService {
     }
 
     public ReservaRecurso crearDesdeDTO(ReservaRecursoDTO dto) {
-        Recurso recurso = recursoRepository.findById(dto.getIdRecurso())
-                .orElseThrow(() -> new RuntimeException("Recurso no encontrado"));
+        try {
+            System.out.println("🎯 Iniciando creación de reserva con datos:");
+            System.out.println("  - Fecha: " + dto.getFecha());
+            System.out.println("  - Tramo: " + dto.getTramoHorario());
+            System.out.println("  - ID Recurso: " + dto.getIdRecurso());
+            System.out.println("  - ID Profesor: " + dto.getIdProfesor());
 
-        Profesor profesor = profesorRepository.findById(dto.getIdProfesor())
-                .orElseThrow(() -> new RuntimeException("Profesor no encontrado"));
+            // Validar que los IDs no sean null
+            if (dto.getIdRecurso() == null) {
+                throw new IllegalArgumentException("El ID del recurso no puede ser null");
+            }
+            if (dto.getIdProfesor() == null) {
+                throw new IllegalArgumentException("El ID del profesor no puede ser null");
+            }
 
-        ReservaRecurso reserva = new ReservaRecurso();
-        reserva.setFecha(LocalDate.parse(dto.getFecha()));
-        reserva.setTramoHorario(dto.getTramoHorario());
-        reserva.setRecurso(recurso);
-        reserva.setProfesor(profesor);
+            // Buscar recurso
+            Recurso recurso = recursoRepository.findById(dto.getIdRecurso())
+                    .orElseThrow(() -> {
+                        System.err.println("❌ Recurso no encontrado con ID: " + dto.getIdRecurso());
+                        return new RuntimeException("Recurso no encontrado con ID: " + dto.getIdRecurso());
+                    });
+            System.out.println("✅ Recurso encontrado: " + recurso.getNombre());
 
-        return reservaRecursoRepository.save(reserva);
+            // Buscar profesor
+            Profesor profesor = profesorRepository.findById(dto.getIdProfesor())
+                    .orElseThrow(() -> {
+                        System.err.println("❌ Profesor no encontrado con ID: " + dto.getIdProfesor());
+                        return new RuntimeException("Profesor no encontrado con ID: " + dto.getIdProfesor());
+                    });
+            System.out.println("✅ Profesor encontrado: " + profesor.getNombre());
+
+            // Validar fecha
+            LocalDate fecha;
+            try {
+                fecha = LocalDate.parse(dto.getFecha());
+                System.out.println("✅ Fecha parseada correctamente: " + fecha);
+            } catch (Exception e) {
+                System.err.println("❌ Error al parsear fecha: " + dto.getFecha());
+                throw new IllegalArgumentException("Formato de fecha inválido: " + dto.getFecha());
+            }
+
+            // Verificar si ya existe una reserva con los mismos datos
+            List<ReservaRecurso> reservasExistentes = reservaRecursoRepository
+                    .findByFechaAndRecurso_Nombre(fecha, recurso.getNombre());
+            
+            System.out.println("📋 Reservas existentes para esta fecha y recurso: " + reservasExistentes.size());
+            
+            for (ReservaRecurso r : reservasExistentes) {
+                System.out.println("  - Tramo existente: '" + r.getTramoHorario() + "'");
+                System.out.println("  - Tramo nuevo: '" + dto.getTramoHorario() + "'");
+                System.out.println("  - ¿Son iguales? " + r.getTramoHorario().equals(dto.getTramoHorario()));
+                
+                if (r.getTramoHorario().equals(dto.getTramoHorario())) {
+                    String mensaje = "Este horario ya está reservado para este material";
+                    System.err.println("❌ " + mensaje);
+                    throw new DataIntegrityViolationException(mensaje);
+                }
+            }
+
+            // Crear la reserva
+            ReservaRecurso reserva = new ReservaRecurso();
+            reserva.setFecha(fecha);
+            reserva.setTramoHorario(dto.getTramoHorario());
+            reserva.setRecurso(recurso);
+            reserva.setProfesor(profesor);
+
+            System.out.println("💾 Guardando reserva en la base de datos...");
+            ReservaRecurso saved = reservaRecursoRepository.save(reserva);
+            System.out.println("✅ Reserva creada exitosamente con ID: " + saved.getIdReserva());
+            
+            return saved;
+            
+        } catch (DataIntegrityViolationException e) {
+            System.err.println("❌ Error de integridad de datos: " + e.getMessage());
+            throw new RuntimeException("Este horario ya está reservado para este material");
+        } catch (IllegalArgumentException e) {
+            System.err.println("❌ Error de validación: " + e.getMessage());
+            throw new RuntimeException(e.getMessage());
+        } catch (Exception e) {
+            System.err.println("❌ Error inesperado al crear reserva:");
+            e.printStackTrace();
+            throw new RuntimeException("Error al crear la reserva: " + e.getMessage());
+        }
     }
 
     public ReservaRecurso actualizarDesdeDTO(Integer id, ReservaRecursoDTO dto) {

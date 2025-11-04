@@ -19,17 +19,61 @@ public class ReservaRecursoController {
     @Autowired
     private ReservaRecursoService reservaRecursoService;
 
-    @PostMapping("/crear")
-    public ResponseEntity<?> crear(@RequestBody ReservaRecursoDTO dto) {
-        try {
-            ReservaRecurso reserva = reservaRecursoService.crearDesdeDTO(dto);
-            return ResponseEntity.ok(reserva);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error al crear la reserva");
+   @PostMapping("/crear")
+public ResponseEntity<?> crear(@RequestBody ReservaRecursoDTO dto) {
+    try {
+        System.out.println("📥 Recibida petición para crear reserva:");
+        System.out.println("  - Fecha: " + dto.getFecha());
+        System.out.println("  - Tramo: " + dto.getTramoHorario());
+        System.out.println("  - ID Recurso: " + dto.getIdRecurso());
+        System.out.println("  - ID Profesor: " + dto.getIdProfesor());
+        
+        ReservaRecurso reserva = reservaRecursoService.crearDesdeDTO(dto);
+        
+        // ✅ Devolver un DTO limpio en lugar de la entidad completa
+        ReservaRecursoDTO respuesta = new ReservaRecursoDTO();
+        respuesta.setIdReserva(reserva.getIdReserva());
+        respuesta.setFecha(reserva.getFecha().toString());
+        respuesta.setTramoHorario(reserva.getTramoHorario());
+        respuesta.setIdRecurso(reserva.getRecurso().getIdRecurso());
+        respuesta.setIdProfesor(reserva.getProfesor().getIdProfesor());
+        respuesta.setNombreRecurso(reserva.getRecurso().getNombre());
+        respuesta.setNombreProfesor(reserva.getProfesor().getNombre());
+        
+        System.out.println("✅ Reserva creada exitosamente con ID: " + reserva.getIdReserva());
+        return ResponseEntity.ok(respuesta);
+        
+    } catch (RuntimeException e) {
+        System.err.println("❌ Error al crear reserva: " + e.getMessage());
+        
+        if (e.getMessage().contains("ya está reservado") || 
+            e.getMessage().contains("Duplicate entry")) {
+            return ResponseEntity
+                .status(HttpStatus.CONFLICT)
+                .body(e.getMessage());
+        } else if (e.getMessage().contains("no encontrado")) {
+            return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .body(e.getMessage());
+        } else if (e.getMessage().contains("inválido") || 
+                   e.getMessage().contains("no puede ser null")) {
+            return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(e.getMessage());
         }
+        
+        return ResponseEntity
+            .status(HttpStatus.INTERNAL_SERVER_ERROR)
+            .body(e.getMessage());
+            
+    } catch (Exception e) {
+        System.err.println("❌ Error inesperado:");
+        e.printStackTrace();
+        return ResponseEntity
+            .status(HttpStatus.INTERNAL_SERVER_ERROR)
+            .body("Error inesperado al crear la reserva: " + e.getMessage());
     }
-
+}
     @PutMapping("/actualizar/{id}")
     public ResponseEntity<?> actualizar(@PathVariable Integer id, @RequestBody ReservaRecursoDTO dto) {
         try {
@@ -57,7 +101,13 @@ public class ReservaRecursoController {
             @RequestParam String fecha,
             @RequestParam String material) {
         try {
+            System.out.println("🔍 Buscando reservas:");
+            System.out.println("  - Fecha: " + fecha);
+            System.out.println("  - Material: " + material);
+            
             List<ReservaRecursoResponseDTO> resultado = reservaRecursoService.buscarPorFechaYMaterial(fecha, material);
+            
+            System.out.println("📋 Encontradas " + resultado.size() + " reservas");
             return ResponseEntity.ok(resultado);
         } catch (Exception e) {
             e.printStackTrace();
@@ -79,7 +129,6 @@ public class ReservaRecursoController {
         }
     }
 
-    // Nota: tu base @RequestMapping ya es /api/reservaRecurso; aquí no repito la ruta completa
     @GetMapping
     public ResponseEntity<?> obtenerTodas() {
         try {

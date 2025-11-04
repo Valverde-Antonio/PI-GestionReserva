@@ -1,25 +1,47 @@
 COSAS A ARREGLAR
 
 - GENERAL
-	- Redirigir a localhost:XXXX cada vez que encuentre una url desconocida para evitar errores 4xx
+HECHO	- Redirigir a localhost:XXXX cada vez que encuentre una url desconocida para evitar errores 4xx 
 
 - HEADER
-	- Dejar solo 1 y en función del rol poner el nombre y las opciones.
+HECHO	- Dejar solo 1 y en función del rol poner el nombre y las opciones.
+	-Revisar si al reccargar la pagina y volver hacia detrás, aparece estando en el login
 	
 -LOGIN
 	-Poner modal para error en las credenciales
-	-Dirigir a profesores a la zona de profesores y a directivos a la zona de directivos(admin)
+HECHO	-Dirigir a profesores a la zona de profesores y a directivos a la zona de directivos(admin)
 
 -PROFESOR
-	-Arreglar header
-	-Poner que se puede reservar por tramos horarios las aulas, cargan bien en el apartado de reservas
-	-En reserva de material no deja reservar, pone que ya esta reservado cuando en accion pone reservar
+HECHO	-Arreglar header
+?????	-Poner que se puede reservar por tramos horarios las aulas, cargan bien en el apartado de reservas
+HECHO	-En reserva de material no deja reservar, pone que ya esta reservado cuando en accion pone reservar
+	-No puede cancelar sus propias reservas, creo que es pq no pilla bien su id , en directivo si puede porque no hay filtro ya 	puede cancelar todo
 
 -DIRECTIVO
-	-Arreglar reseras de materiales
-	-Arreglar reservas de aulas
+HECHO	-Arreglar reseras de materiales
+HECHO	-Arreglar reservas de aulas
 	-Imprimir bien las reservas después de guardarlas en el apartado de reservas
+HECHO	-Arreglar el intervalo de horas, hay que tener en cuenta la media hora del recreo
 
 -VER RESERVAS
 	-Darle un estilo mas visual y cómodo
 	-Exportar PDF mas bonito y con el sello de almudeyne
+
+
+-BASE DE DATOS
+	-Revisar que todo es igual al que nos dio ramon, por ejemplo no esta incluido DNIProfesor en nuestro pryecto
+	-No se si hay que poner el numero de objetos que quiero reservar, en la base de datos no hay cantidad
+
+
+-PREGUNTAR
+	-Si hay que poner cantidad de materiales que quiero reservar, en la base de datos que nos dio ramon no aparece cantidad
+
+
+
+SUBIR CAMBIOS QUE TENGO EN LA MAIN A MI RAMA
+git push -f origin main:raul-develop
+
+
+Filtro "Hoy/Mañana/Esta semana"
+Validación: no reservar en el pasado
+Notificación toast al reservar/cancelar
