@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpResponse } from '@angular/common/http';
 import { Observable, forkJoin } from 'rxjs';
+import { map } from 'rxjs/operators';
 
 export interface ReservaEspacioDTO {
   idReserva?: number;
@@ -12,15 +13,14 @@ export interface ReservaEspacioDTO {
   nombreEspacio?: string;
 }
 
-// ✅ Interfaz actualizada para coincidir con el DTO del backend
 export interface ReservaRecursoDTO {
-  idReserva?: number;           // Opcional para creación
+  idReserva?: number;
   fecha: string;
   tramoHorario: string;
   idRecurso: number;
-  idProfesor: number;           // ✅ Campo principal para identificar al profesor
-  nombreProfesor?: string;      // ✅ Campo adicional del backend
-  nombreRecurso?: string;       // ✅ Campo adicional del backend  
+  idProfesor: number;
+  nombreProfesor?: string;
+  nombreRecurso?: string;
 }
 
 @Injectable({
@@ -41,7 +41,20 @@ export class ReservaService {
 
   crearReservaEspacio(reserva: ReservaEspacioDTO): Observable<any> {
     console.log('Enviando nueva reserva de espacio:', reserva);
-    return this.http.post(`${this.apiUrl}/reservaEspacio/crear`, reserva);
+    // 🔥 SOLUCIÓN: Manejar respuesta como texto
+    return this.http.post(`${this.apiUrl}/reservaEspacio/crear`, reserva, {
+      responseType: 'text' as 'json'
+    }).pipe(
+      map(response => {
+        console.log('✅ Respuesta del servidor (espacio):', response);
+        // Intentar parsear como JSON, si falla devolver objeto simple
+        try {
+          return typeof response === 'string' ? JSON.parse(response) : response;
+        } catch {
+          return { success: true, message: response };
+        }
+      })
+    );
   }
 
   actualizarReservaEspacio(id: number, reserva: ReservaEspacioDTO): Observable<any> {
@@ -49,9 +62,16 @@ export class ReservaService {
     return this.http.put(`${this.apiUrl}/reservaEspacio/actualizar/${id}`, reserva);
   }
 
-  eliminarReservaEspacio(id: number): Observable<void> {
-    console.log('Eliminando reserva de espacio con ID', id);
-    return this.http.delete<void>(`${this.apiUrl}/reservaEspacio/eliminar/${id}`);
+  eliminarReservaEspacio(id: number): Observable<any> {
+    console.log('🗑️ Eliminando reserva de espacio con ID', id);
+    return this.http.delete(`${this.apiUrl}/reservaEspacio/eliminar/${id}`, {
+      responseType: 'text'
+    }).pipe(
+      map(response => {
+        console.log('✅ Respuesta del servidor:', response);
+        return { success: true, message: response };
+      })
+    );
   }
 
   buscarReservasEspacio(fecha: string, aula: string): Observable<any[]> {
@@ -74,7 +94,20 @@ export class ReservaService {
 
   crearReservaRecurso(reserva: ReservaRecursoDTO): Observable<any> {
     console.log('Enviando nueva reserva de recurso:', reserva);
-    return this.http.post(`${this.apiUrl}/reservaRecurso/crear`, reserva);
+    // 🔥 SOLUCIÓN: Manejar respuesta como texto
+    return this.http.post(`${this.apiUrl}/reservaRecurso/crear`, reserva, {
+      responseType: 'text' as 'json'
+    }).pipe(
+      map(response => {
+        console.log('✅ Respuesta del servidor (recurso):', response);
+        // Intentar parsear como JSON, si falla devolver objeto simple
+        try {
+          return typeof response === 'string' ? JSON.parse(response) : response;
+        } catch {
+          return { success: true, message: response };
+        }
+      })
+    );
   }
 
   actualizarReservaRecurso(id: number, reserva: ReservaRecursoDTO): Observable<any> {
@@ -83,8 +116,15 @@ export class ReservaService {
   }
 
   eliminarReservaRecurso(id: number): Observable<any> {
-    console.log(`Eliminando reserva de recurso con ID ${id}`);
-    return this.http.delete(`${this.apiUrl}/reservaRecurso/eliminar/${id}`);
+    console.log(`🗑️ Eliminando reserva de recurso con ID ${id}`);
+    return this.http.delete(`${this.apiUrl}/reservaRecurso/eliminar/${id}`, {
+      responseType: 'text'
+    }).pipe(
+      map(response => {
+        console.log('✅ Respuesta del servidor:', response);
+        return { success: true, message: response };
+      })
+    );
   }
 
   buscarReservasRecurso(fecha: string, material: string): Observable<ReservaRecursoDTO[]> {

@@ -5,11 +5,13 @@
 
   <div class="mb-3">
     <label for="fecha" class="form-label">Fecha</label>
+    <!-- ✅ Agregado [min] para bloquear fechas pasadas -->
     <input
       id="fecha"
       type="date"
       class="form-control"
       [(ngModel)]="fechaSeleccionada"
+      [min]="obtenerFechaHoy()"
       (change)="onFechaChange()"
     />
   </div>
@@ -38,23 +40,21 @@
     </thead>
     <tbody>
       <tr *ngFor="let turno of turnos">
-        <!-- Mostramos HH:mm-HH:mm generado por el componente -->
-        <td class="align-middle text-center"><strong>{{ formatTramo(turno) }}</strong></td>
+        <!-- ✅ Mostrar tramo horario completo HH:mm-HH:mm -->
+        <td class="align-middle text-center">
+          <strong>{{ formatTramo(turno) }}</strong>
+        </td>
 
         <td class="align-middle text-center">
           <ng-container *ngIf="isReservado(turno); else libre">
             <span *ngIf="esReservaPropia(turno)">Reservado por ti</span>
             <span *ngIf="!esReservaPropia(turno)">
-              Reservado
-              <ng-container *ngIf="getReservaPorHora(turno)?.nombreProfesor as np">
-                por {{ np }}
-              </ng-container>
-              <ng-container *ngIf="!getReservaPorHora(turno)?.nombreProfesor">
-                por otro usuario
-              </ng-container>
+              Reservado por {{ getReservaPorHora(turno)?.nombreProfesor || 'otro usuario' }}
             </span>
           </ng-container>
-          <ng-template #libre>Disponible</ng-template>
+          <ng-template #libre>
+            Disponible
+          </ng-template>
         </td>
 
         <td class="align-middle text-center">
@@ -84,14 +84,17 @@
     </tbody>
   </table>
 
+  <!-- Modal -->
   <div *ngIf="mostrarModal" class="modal-backdrop">
     <div class="modal-dialog">
       <div class="modal-content p-3 text-center">
         <p>{{ mensajeModal }}</p>
+        
         <div *ngIf="modoConfirmacion">
           <button class="btn btn-danger me-2" (click)="confirmarEliminacion()">Confirmar eliminación</button>
           <button class="btn btn-secondary" (click)="cerrarModal()">Cancelar</button>
         </div>
+        
         <div *ngIf="!modoConfirmacion">
           <button class="btn btn-success" (click)="cerrarModal()">Cerrar</button>
         </div>

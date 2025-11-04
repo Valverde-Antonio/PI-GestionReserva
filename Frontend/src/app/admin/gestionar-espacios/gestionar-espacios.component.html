@@ -1,12 +1,17 @@
-
-
-
 <div class="container mt-4">
-  <h2 class="mb-4 text-success">Reservar Aula</h2>
+  <h2 class="mb-4 text-success">Gestionar Espacios (Admin)</h2>
 
   <div class="mb-3">
     <label for="fecha" class="form-label">Fecha</label>
-    <input id="fecha" type="date" class="form-control" [(ngModel)]="fechaSeleccionada" (change)="cargarReservas()" />
+    <!-- ✅ Agregado [min] para bloquear fechas pasadas -->
+    <input 
+      id="fecha" 
+      type="date" 
+      class="form-control" 
+      [(ngModel)]="fechaSeleccionada" 
+      [min]="obtenerFechaHoy()"
+      (change)="cargarReservas()" 
+    />
   </div>
 
   <div class="mb-3">
@@ -26,37 +31,43 @@
     </thead>
     <tbody>
       <tr *ngFor="let turno of turnos">
-        <td class="align-middle text-center"><strong>{{ turno }}</strong></td>
+        <!-- ✅ Mostrar tramo horario completo -->
+        <td class="align-middle text-center">
+          <strong>{{ formatTramo(turno) }}</strong>
+        </td>
+        
         <td class="align-middle text-center">
           <ng-container *ngIf="isReservado(turno); else libre">
             <span *ngIf="esReservaPropia(turno)">Reservado por ti</span>
-            <span *ngIf="!esReservaPropia(turno)">Reservado por {{ getReservaPorHora(turno)?.nombreProfesor }}</span>
+            <span *ngIf="!esReservaPropia(turno)">
+              Reservado por {{ getReservaPorHora(turno)?.nombreProfesor || 'otro usuario' }}
+            </span>
           </ng-container>
           <ng-template #libre>
             Disponible
           </ng-template>
         </td>
-  <td class="align-middle text-center">
-  <ng-container *ngIf="isReservado(turno); else botonReservar">
-    <button
-      class="btn btn-danger btn-sm"
-      (click)="cancelarReserva(turno)"
-    >
-      Cancelar
-    </button>
-  </ng-container>
-  <ng-template #botonReservar>
-    <button class="btn btn-success btn-sm" (click)="reservar(turno)">
-      Reservar
-    </button>
-  </ng-template>
-</td>
-
-
+        
+        <td class="align-middle text-center">
+          <ng-container *ngIf="isReservado(turno); else botonReservar">
+            <button
+              class="btn btn-danger btn-sm"
+              (click)="cancelarReserva(turno)"
+            >
+              Cancelar
+            </button>
+          </ng-container>
+          <ng-template #botonReservar>
+            <button class="btn btn-success btn-sm" (click)="reservar(turno)">
+              Reservar
+            </button>
+          </ng-template>
+        </td>
       </tr>
     </tbody>
   </table>
 
+  <!-- Modal -->
   <div *ngIf="mostrarModal" class="modal-backdrop">
     <div class="modal-dialog">
       <div class="modal-content p-3 text-center">

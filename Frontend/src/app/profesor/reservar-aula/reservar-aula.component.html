@@ -3,16 +3,25 @@
 
   <div class="mb-3">
     <label for="fecha" class="form-label">Fecha</label>
-    <input id="fecha" type="date" class="form-control"
-           [(ngModel)]="fechaSeleccionada"
-           (change)="onFechaChange()" />
+    <!-- ✅ Agregado [min] para bloquear fechas pasadas -->
+    <input 
+      id="fecha" 
+      type="date" 
+      class="form-control"
+      [(ngModel)]="fechaSeleccionada"
+      [min]="obtenerFechaHoy()"
+      (change)="onFechaChange()" 
+    />
   </div>
 
   <div class="mb-3">
     <label for="aula" class="form-label">Aula</label>
-    <select id="aula" class="form-select"
-            [(ngModel)]="aulaSeleccionada"
-            (change)="onAulaChange()">
+    <select 
+      id="aula" 
+      class="form-select"
+      [(ngModel)]="aulaSeleccionada"
+      (change)="onAulaChange()"
+    >
       <option *ngFor="let aula of aulas" [ngValue]="aula">{{ aula.nombre }}</option>
     </select>
   </div>
@@ -27,8 +36,10 @@
     </thead>
     <tbody>
       <tr *ngFor="let turno of turnos">
-        <!-- Mostramos HH:mm-HH:mm generado por el componente -->
-        <td class="align-middle text-center"><strong>{{ formatTramo(turno) }}</strong></td>
+        <!-- ✅ Mostrar tramo horario completo HH:mm-HH:mm -->
+        <td class="align-middle text-center">
+          <strong>{{ formatTramo(turno) }}</strong>
+        </td>
 
         <td class="align-middle text-center">
           <ng-container *ngIf="isReservado(turno); else libre">
@@ -44,13 +55,18 @@
 
         <td class="align-middle text-center">
           <ng-container *ngIf="isReservado(turno); else botonReservar">
-            <button *ngIf="esReservaPropia(turno)"
-                    class="btn btn-danger btn-sm"
-                    (click)="cancelarReserva(turno)">
+            <button 
+              *ngIf="esReservaPropia(turno)"
+              class="btn btn-danger btn-sm"
+              (click)="cancelarReserva(turno)"
+            >
               Cancelar
             </button>
-            <button *ngIf="!esReservaPropia(turno)"
-                    class="btn btn-secondary btn-sm" disabled>
+            <button 
+              *ngIf="!esReservaPropia(turno)"
+              class="btn btn-secondary btn-sm" 
+              disabled
+            >
               No disponible
             </button>
           </ng-container>
@@ -64,7 +80,7 @@
     </tbody>
   </table>
 
-  <!-- Modal simple -->
+  <!-- Modal -->
   <div *ngIf="mostrarModal" class="modal-backdrop">
     <div class="modal-dialog">
       <div class="modal-content p-3 text-center">

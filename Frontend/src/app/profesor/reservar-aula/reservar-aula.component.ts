@@ -18,10 +18,9 @@ export class ReservarAulaComponent implements OnInit {
   aulas: any[] = [];
   reservas: ReservaEspacioDTO[] = [];
 
-  // ✅ Tramos lectivos fijos (hora de INICIO). La vista los mostrará como HH:mm-HH:mm
+  // ✅ Tramos lectivos fijos
   turnos: string[] = ['08:00', '09:00', '10:00', '11:30', '12:30', '13:30'];
 
-  // Modal
   mostrarModal: boolean = false;
   mensajeModal: string = '';
   modoConfirmacion: boolean = false;
@@ -33,37 +32,57 @@ export class ReservarAulaComponent implements OnInit {
     private espacioService: EspacioService,
   ) {}
 
-  // ✅ Utils para horarios ------------------------------
-  private pad(n: number) { return n.toString().padStart(2, '0'); }
+  // ✅ Utils para horarios
+  private pad(n: number): string {
+    return n.toString().padStart(2, '0');
+  }
 
-  private addMinutes(hhmm: string, minutes: number) {
+  private addMinutes(hhmm: string, minutes: number): string {
     const [h, m] = hhmm.split(':').map(Number);
     const d = new Date(0, 0, 0, h, (m || 0) + minutes);
     return `${this.pad(d.getHours())}:${this.pad(d.getMinutes())}`;
   }
 
-  /** Devuelve HH:mm-HH:mm (sin espacios) */
-  private normalizaTramo(inicio: string, fin?: string, duracionMin = 60) {
+  private normalizaTramo(inicio: string, fin?: string, duracionMin = 60): string {
     const start = (inicio ?? '').toString().replace(/\s/g, '');
     const end = (fin ?? this.addMinutes(start, duracionMin)).toString().replace(/\s/g, '');
     return `${start}-${end}`;
   }
 
-  /** Quita espacios; si viene solo HH:mm, agrega +60m -> HH:mm-HH:mm */
-  private canonizaTramo(anyStr: string) {
+  private canonizaTramo(anyStr: string): string {
     const limpio = (anyStr ?? '').toString().replace(/\s/g, '');
-    if (/^\d{2}:\d{2}$/.test(limpio)) return `${limpio}-${this.addMinutes(limpio, 60)}`;
+    if (/^\d{2}:\d{2}$/.test(limpio)) {
+      return `${limpio}-${this.addMinutes(limpio, 60)}`;
+    }
     return limpio;
   }
-  // -----------------------------------------------------
+
+  // ✅ Obtener fecha actual (público para usarlo en el template)
+  obtenerFechaHoy(): string {
+    const hoy = new Date();
+    const year = hoy.getFullYear();
+    const month = String(hoy.getMonth() + 1).padStart(2, '0');
+    const day = String(hoy.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  // ✅ Validar fecha pasada
+  private esFechaPasada(fecha: string): boolean {
+    const fechaSelec = new Date(fecha + 'T00:00:00');
+    const hoy = new Date();
+    hoy.setHours(0, 0, 0, 0);
+    return fechaSelec < hoy;
+  }
 
   ngOnInit(): void {
     console.log('✅ Inicializado ReservarAulaComponent');
-    // Usamos tramos fijos; no leemos turnos del backend
+    
+    // ✅ Establecer fecha de HOY por defecto
+    this.fechaSeleccionada = this.obtenerFechaHoy();
+    
     this.cargarAulas();
   }
 
-  // 🧑‍🏫 Mostrar en la UI el rango como HH:mm-HH:mm
   formatTramo(horaInicio: string): string {
     return this.normalizaTramo(horaInicio);
   }
@@ -75,6 +94,8 @@ export class ReservarAulaComponent implements OnInit {
         console.log('🏫 Aulas cargadas:', this.aulas);
         if (this.aulas.length > 0) {
           this.aulaSeleccionada = this.aulas[0];
+          // ✅ Cargar reservas automáticamente
+          this.cargarReservas();
         }
       },
       error: err => {
@@ -84,20 +105,43 @@ export class ReservarAulaComponent implements OnInit {
     });
   }
 
-  onFechaChange(): void { this.cargarReservas(); }
-  onAulaChange(): void { this.cargarReservas(); }
+  onFechaChange(): void {
+    this.cargarReservas();
+  }
+
+  onAulaChange(): void {
+    this.cargarReservas();
+  }
 
   cargarReservas(): void {
     if (!this.fechaSeleccionada || !this.aulaSeleccionada) return;
+    
+    // ✅ Validar fecha pasada
+    if (this.esFechaPasada(this.fechaSeleccionada)) {
+      console.warn('⚠️ No se pueden cargar reservas de fechas pasadas');
+      this.reservas = [];
+      return;
+    }
+    
     console.log(`🔄 Cargando reservas para fecha: ${this.fechaSeleccionada}, aula: ${this.aulaSeleccionada.nombre}`);
+    
     this.reservaService.buscarReservasEspacio(this.fechaSeleccionada, this.aulaSeleccionada.nombre).subscribe({
       next: data => {
-        // ✅ Canonizamos tramoHorario al llegar del backend
-        this.reservas = (data || []).map(r => ({
-          ...r,
-          tramoHorario: this.canonizaTramo(r.tramoHorario)
-        }));
-        console.log('📋 Reservas cargadas (canonizadas):', this.reservas);
+        // ✅ Canonizar y eliminar duplicados
+        const reservasMap = new Map<string, ReservaEspacioDTO>();
+        
+        (data || []).forEach(r => {
+          const tramoCanonizado = this.canonizaTramo(r.tramoHorario);
+          const key = `${tramoCanonizado}-${r.idEspacio}`;
+          
+          // Solo guardar si no existe o si tiene idReserva más reciente
+          if (!reservasMap.has(key) || (r.idReserva && r.idReserva > (reservasMap.get(key)?.idReserva || 0))) {
+            reservasMap.set(key, { ...r, tramoHorario: tramoCanonizado });
+          }
+        });
+        
+        this.reservas = Array.from(reservasMap.values());
+        console.log('📋 Reservas cargadas (sin duplicados):', this.reservas);
       },
       error: () => {
         this.mostrarModalConMensaje('Error al cargar reservas');
@@ -106,9 +150,8 @@ export class ReservarAulaComponent implements OnInit {
     });
   }
 
-  // ✅ Comparación por igualdad exacta con tramo canónico
   isReservado(horaInicio: string): boolean {
-    const tramo = this.normalizaTramo(horaInicio); // HH:mm-HH:mm
+    const tramo = this.normalizaTramo(horaInicio);
     return this.reservas.some(r => this.canonizaTramo(r.tramoHorario) === tramo);
   }
 
@@ -121,16 +164,20 @@ export class ReservarAulaComponent implements OnInit {
   }
 
   getReservaPorHora(horaInicio: string): ReservaEspacioDTO | undefined {
-    const tramo = this.normalizaTramo(horaInicio); // HH:mm-HH:mm
+    const tramo = this.normalizaTramo(horaInicio);
     const reserva = this.reservas.find(r => this.canonizaTramo(r.tramoHorario) === tramo);
     console.log(`🔍 Reserva encontrada para ${horaInicio}:`, reserva);
     return reserva;
   }
 
   reservar(horaInicio: string): void {
+    // ✅ Validar fecha pasada antes de reservar
+    if (this.esFechaPasada(this.fechaSeleccionada)) {
+      this.mostrarModalConMensaje('No se puede reservar en fechas pasadas');
+      return;
+    }
+    
     const idProfesor = Number(localStorage.getItem('idProfesor')) || 1;
-
-    // ✅ Construimos el tramo canónico HH:mm-HH:mm (sin espacios) para la BD
     const tramoHorario = this.normalizaTramo(horaInicio);
 
     const reserva: ReservaEspacioDTO = {
@@ -165,26 +212,25 @@ export class ReservarAulaComponent implements OnInit {
     console.log('🔴 Cancelando reserva:', reserva);
 
     this.reservaService.eliminarReservaEspacio(reserva.idReserva!).subscribe({
-      next: () => {
-        console.log('✅ Reserva eliminada correctamente');
-        // Recargar para reflejar el estado real
+      next: (response) => {
+        console.log('✅ Reserva eliminada correctamente:', response);
         this.cargarReservas();
-        this.mostrarModalConMensaje('Reserva cancelada');
+        this.mostrarModalConMensaje('Reserva cancelada correctamente');
       },
       error: (err) => {
-        console.error('❌ Error al cancelar la reserva:', err);
+        console.error('❌ Error real al cancelar la reserva:', err);
         this.mostrarModalConMensaje('Error al cancelar la reserva');
       }
     });
   }
 
-  mostrarModalConMensaje(mensaje: string) {
+  mostrarModalConMensaje(mensaje: string): void {
     console.log('💬 Mostrando modal:', mensaje);
     this.mensajeModal = mensaje;
     this.mostrarModal = true;
   }
 
-  cerrarModal() {
+  cerrarModal(): void {
     this.mostrarModal = false;
     this.mensajeModal = '';
     this.reservaActual = null;
