@@ -19,13 +19,14 @@ export class TodasLasReservasComponent implements OnInit {
   reservas: any[] = [];
   filtradoReservas: any[] = [];
 
+  // 🔥 CORREGIDO: Fecha por defecto es HOY
   filtroFecha: string = '';
   filtroMaterial: string = '';
-  filtroProfesor: string = '';
+  filtroProfesor: string = '';  // 🔥 Vacío por defecto = "Todos"
   filtroAula: string = '';
   filtroTipo: string = 'Todas';
 
-  profesores: any[] = []; // ⭐ Cambiado para guardar objetos completos
+  profesores: any[] = [];
   espacios: any[] = [];
   materiales: any[] = [];
 
@@ -49,6 +50,10 @@ export class TodasLasReservasComponent implements OnInit {
   mostrarModalEliminar: boolean = false;
   reservaAEliminar: any = null;
 
+  // Loading states
+  cargando: boolean = false;
+  procesando: boolean = false;
+
   constructor(
     private reservaService: ReservaService,
     private recursoService: RecursoService,
@@ -58,7 +63,27 @@ export class TodasLasReservasComponent implements OnInit {
 
   ngOnInit(): void {
     this.usuarioLogeado = localStorage.getItem('nombreCompleto') || '';
+    
+    // 🔥 ESTABLECER FECHA DE HOY POR DEFECTO
+    this.filtroFecha = this.obtenerFechaHoy();
+    
     console.log('👤 Usuario logeado:', this.usuarioLogeado);
+    console.log('📅 Fecha inicial:', this.filtroFecha);
+    
+    this.cargarDatos();
+  }
+
+  // 🔥 NUEVO MÉTODO: Obtener fecha de hoy en formato YYYY-MM-DD
+  obtenerFechaHoy(): string {
+    const hoy = new Date();
+    const year = hoy.getFullYear();
+    const month = String(hoy.getMonth() + 1).padStart(2, '0');
+    const day = String(hoy.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  cargarDatos(): void {
+    this.cargando = true;
     this.cargarProfesores();
     this.cargarMateriales();
     this.cargarEspacios();
@@ -66,86 +91,126 @@ export class TodasLasReservasComponent implements OnInit {
   }
 
   cargarProfesores(): void {
-    this.profesorService.getProfesores().subscribe(data => {
-      this.profesores = data; // ⭐ Guardamos objetos completos con ID y nombre
-      console.log('📘 Profesores cargados:', this.profesores);
+    this.profesorService.getProfesores().subscribe({
+      next: data => {
+        this.profesores = data;
+        console.log('📘 Profesores cargados:', this.profesores);
+      },
+      error: err => console.error('Error al cargar profesores:', err)
     });
   }
 
   cargarMateriales(): void {
-    this.recursoService.getRecursos().subscribe(data => {
-      this.materiales = data;
-      console.log('📦 Materiales cargados:', this.materiales);
+    this.recursoService.getRecursos().subscribe({
+      next: data => {
+        this.materiales = data;
+        console.log('📦 Materiales cargados:', this.materiales);
+      },
+      error: err => console.error('Error al cargar materiales:', err)
     });
   }
 
   cargarEspacios(): void {
-    this.espacioService.getEspacios().subscribe(data => {
-      this.espacios = data;
-      console.log('🏫 Espacios cargados:', this.espacios);
+    this.espacioService.getEspacios().subscribe({
+      next: data => {
+        this.espacios = data;
+        console.log('🏫 Espacios cargados:', this.espacios);
+      },
+      error: err => console.error('Error al cargar espacios:', err)
     });
   }
 
   cargarReservas(): void {
-    this.reservaService.getHistorialCompleto().subscribe(([espacios, recursos]: [any[], any[]]) => {
-      const reservasEspacios = espacios.map((r: any) => ({
-        id: r.idReserva,
-        idEspacio: r.idEspacio,
-        idProfesor: r.idProfesor,          // ⭐ YA GUARDAS ESTO
-        espacio: r.nombreEspacio,
-        recurso: '',
-        fecha: r.fecha,
-        horaInicio: r.tramoHorario,
-        horaFin: r.tramoHorario,
-        estado: 'Finalizada',
-        profesor: r.nombreProfesor,         // ⭐ NOMBRE
-        tipo: 'Aula'
-      }));
+    this.reservaService.getHistorialCompleto().subscribe({
+      next: ([espacios, recursos]: [any[], any[]]) => {
+        const reservasEspacios = espacios.map((r: any) => ({
+          id: r.idReserva,
+          idEspacio: r.idEspacio,
+          idProfesor: r.idProfesor,
+          espacio: r.nombreEspacio,
+          recurso: '',
+          fecha: r.fecha,
+          horaInicio: r.tramoHorario,
+          horaFin: r.tramoHorario,
+          estado: this.calcularEstado(r.fecha),
+          profesor: r.nombreProfesor,
+          tipo: 'Aula'
+        }));
 
-      const reservasRecursos = recursos.map((r: any) => ({
-        id: r.idReserva,
-        idRecurso: r.idRecurso,
-        idProfesor: r.idProfesor,          // ⭐ YA GUARDAS ESTO
-        espacio: '',
-        recurso: r.nombreRecurso,
-        fecha: r.fecha,
-        horaInicio: r.tramoHorario,
-        horaFin: r.tramoHorario,
-        estado: 'Finalizada',
-        profesor: r.nombreProfesor,        // ⭐ NOMBRE
-        tipo: 'Material'
-      }));
+        const reservasRecursos = recursos.map((r: any) => ({
+          id: r.idReserva,
+          idRecurso: r.idRecurso,
+          idProfesor: r.idProfesor,
+          espacio: '',
+          recurso: r.nombreRecurso,
+          fecha: r.fecha,
+          horaInicio: r.tramoHorario,
+          horaFin: r.tramoHorario,
+          estado: this.calcularEstado(r.fecha),
+          profesor: r.nombreProfesor,
+          tipo: 'Material'
+        }));
 
-      this.reservas = [...reservasEspacios, ...reservasRecursos];
-      console.log('📋 Reservas cargadas:', this.reservas);
+        this.reservas = [...reservasEspacios, ...reservasRecursos].sort((a, b) => {
+          return new Date(b.fecha).getTime() - new Date(a.fecha).getTime();
+        });
 
-      this.filtroProfesor = this.usuarioLogeado;
-      this.filtrarReservas();
+        console.log('📋 Reservas cargadas:', this.reservas);
+        
+        // 🔥 NO establecer filtroProfesor aquí, queremos mostrar TODOS
+        this.filtrarReservas();
+        this.cargando = false;
+      },
+      error: err => {
+        console.error('Error al cargar reservas:', err);
+        this.cargando = false;
+      }
     });
+  }
+
+  // 🔥 NUEVO: Calcular estado de la reserva
+  calcularEstado(fecha: string): string {
+    const hoy = new Date();
+    hoy.setHours(0, 0, 0, 0);
+    const fechaReserva = new Date(fecha + 'T00:00:00');
+    
+    if (fechaReserva < hoy) {
+      return 'Finalizada';
+    } else if (fechaReserva.getTime() === hoy.getTime()) {
+      return 'En curso';
+    } else {
+      return 'Pendiente';
+    }
   }
 
   filtrarReservas(): void {
     const { filtroFecha, filtroMaterial, filtroProfesor, filtroAula, filtroTipo } = this;
     console.log('🔍 Aplicando filtros:', { filtroFecha, filtroMaterial, filtroProfesor, filtroAula, filtroTipo });
 
-    this.filtradoReservas = this.reservas.filter(r =>
-      (filtroFecha ? r.fecha === filtroFecha : true) &&
-      (filtroMaterial && r.tipo === 'Material' ? r.recurso.toLowerCase().includes(filtroMaterial.toLowerCase()) : true) &&
-      (filtroProfesor ? r.profesor === filtroProfesor : true) &&
-      (filtroAula && r.tipo === 'Aula' ? r.espacio === filtroAula : true) &&
-      (filtroTipo === 'Todas' ? true : r.tipo === filtroTipo)
-    );
+    this.filtradoReservas = this.reservas.filter(r => {
+      const coincideFecha = filtroFecha ? r.fecha === filtroFecha : true;
+      const coincideMaterial = (filtroMaterial && r.tipo === 'Material') 
+        ? r.recurso === filtroMaterial 
+        : true;
+      const coincideProfesor = filtroProfesor ? r.profesor === filtroProfesor : true;
+      const coincideAula = (filtroAula && r.tipo === 'Aula') 
+        ? r.espacio === filtroAula 
+        : true;
+      const coincideTipo = (filtroTipo === 'Todas') ? true : r.tipo === filtroTipo;
 
-    console.log('✅ Resultados tras filtrar:', this.filtradoReservas);
+      return coincideFecha && coincideMaterial && coincideProfesor && coincideAula && coincideTipo;
+    });
+
+    console.log('✅ Resultados tras filtrar:', this.filtradoReservas.length, 'reservas');
     this.currentPage = 1;
   }
 
   limpiarFiltros(): void {
-    this.filtroFecha = '';
+    this.filtroFecha = this.obtenerFechaHoy();  // 🔥 Volver a HOY
     this.filtroMaterial = '';
     this.filtroAula = '';
     this.filtroTipo = 'Todas';
-    this.filtroProfesor = this.usuarioLogeado;
+    this.filtroProfesor = '';  // 🔥 Todos los profesores
     this.filtrarReservas();
   }
 
@@ -153,16 +218,13 @@ export class TodasLasReservasComponent implements OnInit {
     const doc = new jsPDF();
 
     const logo = new Image();
-    logo.src = 'assets/img/logoAlmudeyne.png'; // ⭐ Ruta correcta
+    logo.src = 'assets/img/logoAlmudeyne.png';
 
     logo.onload = () => {
-      // Logo centrado
       const pageWidth = doc.internal.pageSize.getWidth();
-      //const logoWidth = 35;
 
-      doc.addImage(logo, 'PNG', 15, 10, 30, 30); // Logo a la izquierda
+      doc.addImage(logo, 'PNG', 15, 10, 30, 30);
 
-      // Título centrado debajo del logo
       doc.setFontSize(18);
       doc.setFont('helvetica', 'bold');
       doc.text('Instituto de Educación Secundaria', pageWidth / 2, 52, { align: 'center' });
@@ -174,12 +236,10 @@ export class TodasLasReservasComponent implements OnInit {
       doc.setFont('helvetica', 'normal');
       doc.text('Historial de Reservas', pageWidth / 2, 68, { align: 'center' });
 
-      // Línea decorativa
       doc.setLineWidth(0.5);
       doc.setDrawColor(60, 126, 102);
       doc.line(50, 73, pageWidth - 50, 73);
 
-      // Información
       doc.setFontSize(9);
       doc.setTextColor(100);
       const fechaGeneracion = new Date().toLocaleDateString('es-ES', {
@@ -191,7 +251,6 @@ export class TodasLasReservasComponent implements OnInit {
       doc.text(`Fecha de generación: ${fechaGeneracion}`, pageWidth / 2, 80, { align: 'center' });
       doc.text(`Total de reservas: ${this.filtradoReservas.length}`, pageWidth / 2, 86, { align: 'center' });
 
-      // Tabla
       doc.setTextColor(0);
       autoTable(doc, {
         head: [['Tipo', 'Espacio/Material', 'Fecha', 'Tramo Horario', 'Profesor', 'Estado']],
@@ -222,7 +281,6 @@ export class TodasLasReservasComponent implements OnInit {
         margin: { left: 15, right: 15 }
       });
 
-      // Pie de página con número de página
       const pageCount = doc.getNumberOfPages();
       for (let i = 1; i <= pageCount; i++) {
         doc.setPage(i);
@@ -235,7 +293,6 @@ export class TodasLasReservasComponent implements OnInit {
           { align: 'center' }
         );
 
-        // Texto adicional en el pie
         doc.text(
           'IES Almudeyne - Sistema de Gestión de Reservas',
           pageWidth / 2,
@@ -250,7 +307,6 @@ export class TodasLasReservasComponent implements OnInit {
 
     logo.onerror = () => {
       console.warn('⚠️ Error al cargar el logo del instituto');
-      alert('No se pudo cargar el logo. Generando PDF sin imagen.');
       this.generarPDFSinLogo();
     };
   }
@@ -346,19 +402,16 @@ export class TodasLasReservasComponent implements OnInit {
     this.reservaSeleccionada = null;
   }
 
-  // ⭐ MÉTODO CORREGIDO
   guardarCambios(): void {
-    if (!this.reservaSeleccionada) return;
+    if (!this.reservaSeleccionada || this.procesando) return;
 
     console.log('💾 Guardando cambios de reserva:', this.reservaSeleccionada);
-
-    // ⭐ USAR EL ID QUE YA TIENES EN LA RESERVA
-    // No necesitas buscar el profesor, ya tienes su ID
+    this.procesando = true;
 
     const dto: any = {
       fecha: this.reservaSeleccionada.fecha,
       tramoHorario: this.reservaSeleccionada.horaInicio,
-      idProfesor: this.reservaSeleccionada.idProfesor  // ⭐ USAR EL ID QUE YA TIENES
+      idProfesor: this.reservaSeleccionada.idProfesor
     };
 
     // Si el usuario cambió el profesor en el select, buscar el nuevo ID
@@ -369,41 +422,43 @@ export class TodasLasReservasComponent implements OnInit {
 
     // Determinar si es reserva de espacio o recurso
     if (this.reservaSeleccionada.tipo === 'Aula') {
-      // Si el usuario cambió el espacio, buscar el nuevo ID
       const espacioCambiado = this.espacios.find(e => e.nombre === this.reservaSeleccionada.espacio);
       dto.idEspacio = espacioCambiado ? espacioCambiado.idEspacio : this.reservaSeleccionada.idEspacio;
 
       console.log('📤 Enviando actualización de espacio:', dto);
 
       this.reservaService.actualizarReservaEspacio(this.reservaSeleccionada.id, dto).subscribe({
-        next: (response) => {
-          console.log('✅ Reserva de espacio actualizada:', response);
+        next: () => {
+          console.log('✅ Reserva de espacio actualizada');
           alert('Reserva actualizada correctamente');
+          this.procesando = false;
           this.cerrarModal();
           this.cargarReservas();
         },
         error: (error) => {
           console.error('❌ Error al actualizar reserva de espacio:', error);
           alert('Error al actualizar la reserva: ' + (error.error?.message || error.message));
+          this.procesando = false;
         }
       });
     } else {
-      // Si el usuario cambió el recurso, buscar el nuevo ID
       const recursoCambiado = this.materiales.find(m => m.nombre === this.reservaSeleccionada.recurso);
       dto.idRecurso = recursoCambiado ? recursoCambiado.idRecurso : this.reservaSeleccionada.idRecurso;
 
       console.log('📤 Enviando actualización de recurso:', dto);
 
       this.reservaService.actualizarReservaRecurso(this.reservaSeleccionada.id, dto).subscribe({
-        next: (response) => {
-          console.log('✅ Reserva de recurso actualizada:', response);
+        next: () => {
+          console.log('✅ Reserva de recurso actualizada');
           alert('Reserva actualizada correctamente');
+          this.procesando = false;
           this.cerrarModal();
           this.cargarReservas();
         },
         error: (error) => {
           console.error('❌ Error al actualizar reserva de recurso:', error);
           alert('Error al actualizar la reserva: ' + (error.error?.message || error.message));
+          this.procesando = false;
         }
       });
     }
@@ -414,36 +469,40 @@ export class TodasLasReservasComponent implements OnInit {
     this.mostrarModalEliminar = true;
   }
 
-  // ⭐ MÉTODO ACTUALIZADO: Ahora elimina de la base de datos
   confirmarEliminacion(): void {
-    if (!this.reservaAEliminar) return;
+    if (!this.reservaAEliminar || this.procesando) return;
 
     console.log('🗑️ Eliminando reserva:', this.reservaAEliminar);
+    this.procesando = true;
 
     if (this.reservaAEliminar.tipo === 'Aula') {
       this.reservaService.eliminarReservaEspacio(this.reservaAEliminar.id).subscribe({
-        next: (response) => {
-          console.log('✅ Reserva de espacio eliminada:', response);
+        next: () => {
+          console.log('✅ Reserva de espacio eliminada');
           alert('Reserva eliminada correctamente');
+          this.procesando = false;
           this.cancelarEliminacion();
-          this.cargarReservas(); // Recargar para ver los cambios
+          this.cargarReservas();
         },
         error: (error) => {
           console.error('❌ Error al eliminar reserva de espacio:', error);
           alert('Error al eliminar la reserva');
+          this.procesando = false;
         }
       });
     } else {
       this.reservaService.eliminarReservaRecurso(this.reservaAEliminar.id).subscribe({
-        next: (response) => {
-          console.log('✅ Reserva de recurso eliminada:', response);
+        next: () => {
+          console.log('✅ Reserva de recurso eliminada');
           alert('Reserva eliminada correctamente');
+          this.procesando = false;
           this.cancelarEliminacion();
-          this.cargarReservas(); // Recargar para ver los cambios
+          this.cargarReservas();
         },
         error: (error) => {
           console.error('❌ Error al eliminar reserva de recurso:', error);
           alert('Error al eliminar la reserva');
+          this.procesando = false;
         }
       });
     }

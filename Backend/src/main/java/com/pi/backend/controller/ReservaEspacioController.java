@@ -9,9 +9,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-
 import java.util.List;
 import java.util.Map;
+
 @RestController
 @RequestMapping("/api/reservaEspacio")
 @CrossOrigin(origins = "*")
@@ -20,12 +20,20 @@ public class ReservaEspacioController {
     @Autowired
     private ReservaEspacioService reservaEspacioService;
 
+    // 🔥 MÉTODO CORREGIDO - Ahora incluye idProfesor
     @GetMapping
     public ResponseEntity<?> obtenerReservas() {
         try {
             List<ReservaEspacio> reservas = reservaEspacioService.obtenerTodas();
             List<ReservaEspacioResponseDTO> dtoList = reservas.stream()
-                    .map(ReservaEspacioResponseDTO::new)
+                    .map(reserva -> {
+                        ReservaEspacioResponseDTO dto = new ReservaEspacioResponseDTO(reserva);
+                        // 🔥 Asegurarse de que idProfesor se incluya
+                        if (reserva.getProfesor() != null) {
+                            dto.setIdProfesor(reserva.getProfesor().getIdProfesor().longValue());
+                        }
+                        return dto;
+                    })
                     .toList();
             return ResponseEntity.ok(dtoList);
         } catch (Exception e) {
@@ -64,19 +72,19 @@ public class ReservaEspacioController {
     }
 
     @DeleteMapping("/eliminar/{id}")
-public ResponseEntity<?> eliminarReserva(@PathVariable Long id) {
-    System.out.println("Intentando eliminar reserva con ID: " + id);
-    try {
-        reservaEspacioService.eliminarReserva(id.intValue());
-        return ResponseEntity.ok("Reserva eliminada correctamente");
-    } catch (RuntimeException e) {
-        System.err.println("Error al eliminar reserva: " + e.getMessage());
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-    } catch (Exception e) {
-        System.err.println("Error inesperado al eliminar reserva: " + e.getMessage());
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error al eliminar reserva");
+    public ResponseEntity<?> eliminarReserva(@PathVariable Long id) {
+        System.out.println("Intentando eliminar reserva con ID: " + id);
+        try {
+            reservaEspacioService.eliminarReserva(id.intValue());
+            return ResponseEntity.ok("Reserva eliminada correctamente");
+        } catch (RuntimeException e) {
+            System.err.println("Error al eliminar reserva: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        } catch (Exception e) {
+            System.err.println("Error inesperado al eliminar reserva: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error al eliminar reserva");
+        }
     }
-}
 
     @GetMapping("/filtrar")
     public List<ReservaEspacioResponseDTO> filtrarReservasEspacio(
@@ -88,8 +96,7 @@ public ResponseEntity<?> eliminarReserva(@PathVariable Long id) {
     }
 
     @GetMapping("/turnos")
-public List<String> obtenerTurnos() {
-    return reservaEspacioService.obtenerTurnosDisponibles();
-}
-
+    public List<String> obtenerTurnos() {
+        return reservaEspacioService.obtenerTurnosDisponibles();
+    }
 }
