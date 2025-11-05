@@ -1,9 +1,10 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterOutlet } from '@angular/router';
+import { RouterOutlet, Router, NavigationEnd } from '@angular/router';
 import { AuthService } from './services/auth.service';
-import { HeaderComponent } from './header/header.component'; // ← AÑADIR
-import { HeaderAdminComponent } from './header-admin/header-admin.component'; // ← AÑADIR
+import { HeaderComponent } from './header/header.component';
+import { HeaderAdminComponent } from './header-admin/header-admin.component';
+import { filter } from 'rxjs/operators';
 
 @Component({
   selector: 'app-root',
@@ -11,47 +12,55 @@ import { HeaderAdminComponent } from './header-admin/header-admin.component'; //
   imports: [
     CommonModule, 
     RouterOutlet,
-    HeaderComponent,      // ← AÑADIR
-    HeaderAdminComponent  // ← AÑADIR
+    HeaderComponent,
+    HeaderAdminComponent
   ],
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.css']
 })
 export class AppComponent implements OnInit {
   title = 'GestionReservas';
-  
-  // 🔥 SOLUCIÓN: Usar observable del AuthService
   rol: string = '';
 
-  constructor(private authService: AuthService) {}
+  constructor(
+    public authService: AuthService,
+    private router: Router
+  ) {}
 
   ngOnInit(): void {
-    // 🔥 Suscribirse al observable del rol
+    console.log('🚀 AppComponent inicializado');
+    
+    // 🔥 SOLUCIÓN 1: Leer el rol inicial del localStorage
+    this.rol = localStorage.getItem('rol') || '';
+    console.log('📋 Rol inicial desde localStorage:', this.rol);
+
+    // 🔥 SOLUCIÓN 2: Suscribirse a cambios del rol
     this.authService.rol$.subscribe(rol => {
       this.rol = rol;
-      console.log('🎭 App Component - Rol actualizado:', this.rol);
+      console.log('🎭 App Component - Rol actualizado vía observable:', this.rol);
     });
 
-    // 🔥 También leer directamente del localStorage como fallback
-    if (!this.rol) {
+    // 🔥 SOLUCIÓN 3: Actualizar el rol en cada cambio de ruta
+    this.router.events.pipe(
+      filter(event => event instanceof NavigationEnd)
+    ).subscribe(() => {
+      // Volver a leer el rol después de cada navegación
       this.rol = localStorage.getItem('rol') || '';
-      console.log('🎭 App Component - Rol desde localStorage:', this.rol);
-    }
+      console.log('🔄 Navegación detectada - Rol actual:', this.rol);
+    });
   }
 
   get esDirectivo(): boolean {
-    const directivo = this.rol === 'directivo';
-    console.log('🔍 ¿Es directivo?', directivo, '- Rol actual:', this.rol);
-    return directivo;
+    return this.rol === 'directivo';
   }
 
   get esProfesor(): boolean {
-    const profesor = this.rol === 'profesor';
-    console.log('🔍 ¿Es profesor?', profesor, '- Rol actual:', this.rol);
-    return profesor;
+    return this.rol === 'profesor';
   }
 
- get mostrarHeaders(): boolean {
-  return !!this.rol && (this.esDirectivo || this.esProfesor);
-}
+  get mostrarHeaders(): boolean {
+    const mostrar = !!this.rol && (this.esDirectivo || this.esProfesor);
+    console.log('👁️ ¿Mostrar headers?', mostrar, '- Rol:', this.rol);
+    return mostrar;
+  }
 }

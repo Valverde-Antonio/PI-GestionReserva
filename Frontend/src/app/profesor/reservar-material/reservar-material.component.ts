@@ -19,7 +19,6 @@ export class ReservarMaterialComponent implements OnInit {
   materiales: any[] = [];
   reservas: ReservaRecursoDTO[] = [];
 
-  // ✅ Tramos fijos
   turnos: string[] = ['08:00', '09:00', '10:00', '11:30', '12:30', '13:30'];
 
   mostrarModal: boolean = false;
@@ -27,7 +26,6 @@ export class ReservarMaterialComponent implements OnInit {
   modoConfirmacion: boolean = false;
   reservaActual: any = null;
   
-  // 🔥 Flag para controlar actualizaciones optimistas
   procesandoReserva: boolean = false;
 
   constructor(
@@ -36,7 +34,6 @@ export class ReservarMaterialComponent implements OnInit {
     private recursoService: RecursoService
   ) {}
 
-  // ✅ Utils horarios
   private pad(n: number): string {
     return n.toString().padStart(2, '0');
   }
@@ -61,7 +58,6 @@ export class ReservarMaterialComponent implements OnInit {
     return limpio;
   }
 
-  // ✅ Obtener fecha actual (público para el template)
   obtenerFechaHoy(): string {
     const hoy = new Date();
     const year = hoy.getFullYear();
@@ -70,7 +66,6 @@ export class ReservarMaterialComponent implements OnInit {
     return `${year}-${month}-${day}`;
   }
 
-  // ✅ Validar fecha pasada
   private esFechaPasada(fecha: string): boolean {
     const fechaSelec = new Date(fecha + 'T00:00:00');
     const hoy = new Date();
@@ -80,10 +75,7 @@ export class ReservarMaterialComponent implements OnInit {
 
   ngOnInit(): void {
     console.log('✅ Inicializado ReservarMaterialComponent');
-    
-    // ✅ Establecer fecha de HOY por defecto
     this.fechaSeleccionada = this.obtenerFechaHoy();
-    
     this.cargarMateriales();
   }
 
@@ -98,7 +90,6 @@ export class ReservarMaterialComponent implements OnInit {
         console.log('🛠️ Materiales disponibles:', this.materiales);
         if (this.materiales.length > 0) {
           this.materialSeleccionado = this.materiales[0];
-          // ✅ Cargar reservas automáticamente
           this.cargarReservas();
         }
       },
@@ -120,40 +111,53 @@ export class ReservarMaterialComponent implements OnInit {
   cargarReservas(): void {
     if (!this.fechaSeleccionada || !this.materialSeleccionado) return;
 
-    // ✅ Validar fecha pasada
     if (this.esFechaPasada(this.fechaSeleccionada)) {
       console.warn('⚠️ No se pueden cargar reservas de fechas pasadas');
       this.reservas = [];
       return;
     }
 
-    console.log(`📄 Cargando reservas para fecha: ${this.fechaSeleccionada}, material: ${this.materialSeleccionado.nombre}`);
+    console.log(`🔄 Cargando reservas para fecha: ${this.fechaSeleccionada}, material: ${this.materialSeleccionado.nombre}`);
 
     this.reservaService
       .buscarReservasRecurso(this.fechaSeleccionada, this.materialSeleccionado.nombre)
       .subscribe({
         next: (data) => {
-          // ✅ Canonizar y eliminar duplicados
+          console.log('🔍 DATOS DEL BACKEND:', data);
+          
           const reservasMap = new Map<string, ReservaRecursoDTO>();
           
           (data || []).forEach(r => {
             const tramoCanonizado = this.canonizaTramo(r.tramoHorario);
             const key = `${tramoCanonizado}-${r.idRecurso}`;
             
-            // Solo guardar si no existe o si tiene idReserva más reciente
+            // 🔥 CORREGIDO: Crear objeto sin spread operator
+            const reservaNormalizada: ReservaRecursoDTO = {
+              idReserva: r.idReserva,
+              fecha: r.fecha,
+              tramoHorario: tramoCanonizado,
+              idRecurso: r.idRecurso,
+              idProfesor: r.idProfesor ? Number(r.idProfesor) : undefined,
+              nombreProfesor: r.nombreProfesor,
+              nombreRecurso: r.nombreRecurso
+            };
+            
             if (!reservasMap.has(key) || (r.idReserva && r.idReserva > (reservasMap.get(key)?.idReserva || 0))) {
-              reservasMap.set(key, { ...r, tramoHorario: tramoCanonizado });
+              reservasMap.set(key, reservaNormalizada);
             }
           });
           
           this.reservas = Array.from(reservasMap.values());
-          console.log('📋 Reservas cargadas (sin duplicados):', this.reservas);
-          console.log('📋 Detalles reservas:', this.reservas.map(r => ({
+          
+          console.log('📋 Reservas procesadas:', this.reservas.map(r => ({
             tramo: r.tramoHorario,
             profesor: r.nombreProfesor,
             idProfesor: r.idProfesor,
-            idReserva: r.idReserva
+            idProfesorTipo: typeof r.idProfesor
           })));
+          
+          const idProfesorActual = this.authService.getIdProfesor();
+          console.log('🔑 Usuario actual - idProfesor:', idProfesorActual, 'nombre:', this.authService.getNombreCompleto());
         },
         error: (err) => {
           console.error('❌ Error al cargar reservas:', err);
@@ -165,53 +169,65 @@ export class ReservarMaterialComponent implements OnInit {
 
   isReservado(horaInicio: string): boolean {
     const tramo = this.normalizaTramo(horaInicio);
-    const reservado = this.reservas.some(r => this.canonizaTramo(r.tramoHorario) === tramo);
-    return reservado;
+    return this.reservas.some(r => this.canonizaTramo(r.tramoHorario) === tramo);
   }
 
+  // 🔥 SOLUCIÓN: Verificar por ID con fallback a nombre
   esReservaPropia(horaInicio: string): boolean {
     const r = this.getReservaPorHora(horaInicio);
     if (!r) {
-      console.log(`👤 No hay reserva para ${horaInicio}`);
       return false;
     }
     
-    const idProfesor = Number(localStorage.getItem('idProfesor')) || 0;
-    const idReservaProfesor = Number(r.idProfesor);
-    const esPropia = idReservaProfesor === idProfesor;
+    const idProfesorActual = this.authService.getIdProfesor();
     
-    console.log(`👤 ¿Reserva propia ${horaInicio}?`, {
-      idProfesorLocal: idProfesor,
-      idProfesorReserva: idReservaProfesor,
-      esPropia: esPropia,
-      reserva: r
+    // Si el backend envía idProfesor, usar ese (más robusto)
+    if (r.idProfesor !== undefined && r.idProfesor !== null && !isNaN(r.idProfesor as any)) {
+      const idReservaProfesor = Number(r.idProfesor);
+      const esPropia = idReservaProfesor === idProfesorActual;
+      
+      console.log(`👤 ¿Reserva propia ${horaInicio}? (por ID)`, {
+        idProfesorActual: idProfesorActual,
+        idProfesorReserva: idReservaProfesor,
+        esPropia: esPropia
+      });
+      
+      return esPropia;
+    }
+    
+    // Fallback: Si no hay idProfesor, verificar por nombre
+    console.warn(`⚠️ Reserva sin idProfesor válido, verificando por nombre`);
+    const nombreActual = this.authService.getNombreCompleto().trim().toLowerCase();
+    const nombreReserva = (r.nombreProfesor || '').trim().toLowerCase();
+    const esPropiaPorNombre = nombreActual === nombreReserva;
+    
+    console.log(`👤 ¿Reserva propia ${horaInicio}? (por nombre)`, {
+      nombreActual: nombreActual,
+      nombreReserva: nombreReserva,
+      esPropia: esPropiaPorNombre
     });
     
-    return esPropia;
+    return esPropiaPorNombre;
   }
 
   getReservaPorHora(horaInicio: string): ReservaRecursoDTO | undefined {
     const tramo = this.normalizaTramo(horaInicio);
-    const reserva = this.reservas.find(r => this.canonizaTramo(r.tramoHorario) === tramo);
-    return reserva;
+    return this.reservas.find(r => this.canonizaTramo(r.tramoHorario) === tramo);
   }
 
   reservar(horaInicio: string): void {
     console.log('🎯 Iniciando proceso de reserva para:', horaInicio);
     
-    // 🔥 Prevenir doble clic
     if (this.procesandoReserva) {
       console.log('⚠️ Ya hay una reserva en proceso');
       return;
     }
     
-    // ✅ Validar fecha pasada antes de reservar
     if (this.esFechaPasada(this.fechaSeleccionada)) {
       this.mostrarModalConMensaje('No se puede reservar en fechas pasadas');
       return;
     }
 
-    // ✅ Verificar si ya está reservado
     if (this.isReservado(horaInicio)) {
       console.log('⚠️ El horario ya está reservado');
       if (this.esReservaPropia(horaInicio)) {
@@ -223,10 +239,9 @@ export class ReservarMaterialComponent implements OnInit {
       return;
     }
 
-    const idProfesor = Number(localStorage.getItem('idProfesor')) || 0;
+    const idProfesor = this.authService.getIdProfesor();
     const tramoHorario = this.normalizaTramo(horaInicio);
 
-    // ✅ Validación de campos obligatorios
     if (!this.materialSeleccionado || !this.materialSeleccionado.idRecurso) {
       console.error('❌ Error: El material seleccionado no tiene un id válido');
       this.mostrarModalConMensaje('Error: Material no seleccionado');
@@ -248,35 +263,28 @@ export class ReservarMaterialComponent implements OnInit {
 
     console.log('🟢 Creando reserva de recurso:', reserva);
     
-    // 🔥 Marcar como procesando
     this.procesandoReserva = true;
 
     this.reservaService.crearReservaRecurso(reserva).subscribe({
       next: (response) => {
         console.log('✅ Reserva creada exitosamente:', response);
         
-        // 🔥 SOLUCIÓN: Asegurar que idProfesor se guarda como número
-        const nombreProfesor = localStorage.getItem('nombreCompleto') || 'Tú';
+        const nombreProfesor = this.authService.getNombreCompleto();
         const nuevaReserva: ReservaRecursoDTO = {
           fecha: this.fechaSeleccionada,
           tramoHorario: tramoHorario,
           idRecurso: Number(this.materialSeleccionado.idRecurso),
-          idProfesor: Number(idProfesor), // 🔥 Asegurar que es número
+          idProfesor: Number(idProfesor),
           idReserva: response?.idReserva || Date.now(),
           nombreProfesor: nombreProfesor,
           nombreRecurso: this.materialSeleccionado.nombre
         };
         
         this.reservas.push(nuevaReserva);
-        console.log('✅ Reserva añadida al array local:', nuevaReserva);
-        console.log('✅ Verificación idProfesor:', {
-          tipo: typeof nuevaReserva.idProfesor,
-          valor: nuevaReserva.idProfesor
-        });
+        console.log('✅ Reserva añadida al array local');
         
         this.mostrarModalConMensaje('Reserva creada con éxito');
         
-        // Recargar después de un momento para confirmar
         setTimeout(() => {
           this.cargarReservas();
           this.procesandoReserva = false;
@@ -284,14 +292,8 @@ export class ReservarMaterialComponent implements OnInit {
       },
       error: (error) => {
         console.error('❌ Error al crear la reserva:', error);
-        console.error('📋 Detalles del error:', {
-          status: error.status,
-          mensaje: error.error,
-          url: error.url
-        });
         this.procesandoReserva = false;
         
-        // Mejorar mensajes de error
         if (error.status === 500 || error.status === 409) {
           this.mostrarModalConMensaje('El turno ya está reservado');
           this.cargarReservas();
@@ -318,7 +320,6 @@ export class ReservarMaterialComponent implements OnInit {
 
     console.log('🔴 Cancelando reserva:', reserva);
     
-    // 🔥 Prevenir doble clic
     if (this.procesandoReserva) {
       return;
     }
@@ -328,7 +329,6 @@ export class ReservarMaterialComponent implements OnInit {
       next: (response) => {
         console.log('✅ Reserva eliminada correctamente:', response);
         
-        // 🔥 Actualización optimista
         this.reservas = this.reservas.filter(r => r.idReserva !== reserva.idReserva);
         console.log('✅ Reserva eliminada del array local');
         
@@ -340,7 +340,7 @@ export class ReservarMaterialComponent implements OnInit {
         }, 500);
       },
       error: (err) => {
-        console.error('❌ Error real al cancelar la reserva:', err);
+        console.error('❌ Error al cancelar la reserva:', err);
         this.procesandoReserva = false;
         this.mostrarModalConMensaje('Error al cancelar la reserva');
       },
@@ -372,7 +372,7 @@ export class ReservarMaterialComponent implements OnInit {
         setTimeout(() => this.cargarReservas(), 300);
       },
       error: (error) => {
-        console.error('❌ Error real al eliminar la reserva:', error);
+        console.error('❌ Error al eliminar la reserva:', error);
         this.mostrarModalConMensaje('Error al eliminar la reserva');
       }
     });

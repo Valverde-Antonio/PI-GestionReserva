@@ -8,6 +8,7 @@ public class ReservaRecursoResponseDTO {
     private String tramoHorario;
     private String nombreRecurso;
     private String nombreProfesor;
+    private Integer idProfesor;  // 🔥 AÑADIDO
 
     public ReservaRecursoResponseDTO() {}
 
@@ -17,16 +18,25 @@ public class ReservaRecursoResponseDTO {
         this.tramoHorario = reserva.getTramoHorario();
         this.nombreRecurso = reserva.getRecurso() != null ? reserva.getRecurso().getNombre() : null;
         this.nombreProfesor = reserva.getProfesor() != null ? reserva.getProfesor().getNombre() : null;
+        this.idProfesor = reserva.getProfesor() != null ? reserva.getProfesor().getIdProfesor() : null;  // 🔥 AÑADIDO
     }
 
     public Integer getIdReserva() { return idReserva; }
     public void setIdReserva(Integer idReserva) { this.idReserva = idReserva; }
+    
     public String getFecha() { return fecha; }
     public void setFecha(String fecha) { this.fecha = fecha; }
+    
     public String getTramoHorario() { return tramoHorario; }
     public void setTramoHorario(String tramoHorario) { this.tramoHorario = tramoHorario; }
+    
     public String getNombreRecurso() { return nombreRecurso; }
     public void setNombreRecurso(String nombreRecurso) { this.nombreRecurso = nombreRecurso; }
+    
     public String getNombreProfesor() { return nombreProfesor; }
     public void setNombreProfesor(String nombreProfesor) { this.nombreProfesor = nombreProfesor; }
+    
+    // 🔥 AÑADIDO: Getter y Setter para idProfesor
+    public Integer getIdProfesor() { return idProfesor; }
+    public void setIdProfesor(Integer idProfesor) { this.idProfesor = idProfesor; }
 }

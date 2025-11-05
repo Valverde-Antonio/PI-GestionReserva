@@ -12,11 +12,11 @@ import java.util.List;
 @Repository
 public interface ReservaRecursoRepository extends JpaRepository<ReservaRecurso, Integer> {
 
-    // ⭐ NUEVO MÉTODO - Valida contra la constraint real de la BD
+    // 🔥 CORREGIDO: Usar Integer en lugar de Long
     boolean existsByFechaAndTramoHorarioAndRecurso_IdRecurso(
         LocalDate fecha, 
         String tramoHorario, 
-        Long idRecurso
+        Integer idRecurso  // 🔥 Cambiado de Long a Integer
     );
 
     // Métodos existentes

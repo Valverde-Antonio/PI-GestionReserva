@@ -1,6 +1,8 @@
+<!-- Solo mostrar headers cuando hay un usuario autenticado -->
 <ng-container *ngIf="mostrarHeaders">
   <app-header-admin *ngIf="rol === 'directivo'"></app-header-admin>
   <app-header *ngIf="rol === 'profesor'"></app-header>
 </ng-container>
 
+<!-- El contenido de las páginas se renderiza aquí -->
 <router-outlet></router-outlet>

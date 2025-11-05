@@ -18,7 +18,7 @@ export interface ReservaRecursoDTO {
   fecha: string;
   tramoHorario: string;
   idRecurso: number;
-  idProfesor: number;
+  idProfesor?: number;
   nombreProfesor?: string;
   nombreRecurso?: string;
 }
