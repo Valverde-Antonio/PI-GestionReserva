@@ -33,7 +33,10 @@ export class ReservaService {
     console.log('ReservaService inicializado');
   }
 
+  // ============================================
   // RESERVAS DE ESPACIOS
+  // ============================================
+
   getReservasEspacio(): Observable<any[]> {
     console.log('Obteniendo todas las reservas de espacios');
     return this.http.get<any[]>(`${this.apiUrl}/reservaEspacio`);
@@ -41,13 +44,11 @@ export class ReservaService {
 
   crearReservaEspacio(reserva: ReservaEspacioDTO): Observable<any> {
     console.log('Enviando nueva reserva de espacio:', reserva);
-    // 🔥 SOLUCIÓN: Manejar respuesta como texto
     return this.http.post(`${this.apiUrl}/reservaEspacio/crear`, reserva, {
       responseType: 'text' as 'json'
     }).pipe(
       map(response => {
         console.log('✅ Respuesta del servidor (espacio):', response);
-        // Intentar parsear como JSON, si falla devolver objeto simple
         try {
           return typeof response === 'string' ? JSON.parse(response) : response;
         } catch {
@@ -57,9 +58,21 @@ export class ReservaService {
     );
   }
 
-  actualizarReservaEspacio(id: number, reserva: ReservaEspacioDTO): Observable<any> {
+  actualizarReservaEspacio(id: number, reserva: any): Observable<any> {
     console.log(`Actualizando reserva de espacio con ID ${id}:`, reserva);
-    return this.http.put(`${this.apiUrl}/reservaEspacio/actualizar/${id}`, reserva);
+    // ⭐ Agregar responseType: 'text' igual que en eliminar
+    return this.http.put(`${this.apiUrl}/reservaEspacio/actualizar/${id}`, reserva, {
+      responseType: 'text' as 'json'
+    }).pipe(
+      map(response => {
+        console.log('✅ Respuesta del servidor:', response);
+        try {
+          return typeof response === 'string' ? JSON.parse(response) : response;
+        } catch {
+          return { success: true, message: response };
+        }
+      })
+    );
   }
 
   eliminarReservaEspacio(id: number): Observable<any> {
@@ -86,7 +99,10 @@ export class ReservaService {
     return this.http.get<string[]>(`${this.apiUrl}/reservaEspacio/turnos`);
   }
 
+  // ============================================
   // RESERVAS DE RECURSOS
+  // ============================================
+
   getReservasRecurso(): Observable<any[]> {
     console.log('Obteniendo todas las reservas de recursos');
     return this.http.get<any[]>(`${this.apiUrl}/reservaRecurso`);
@@ -94,13 +110,11 @@ export class ReservaService {
 
   crearReservaRecurso(reserva: ReservaRecursoDTO): Observable<any> {
     console.log('Enviando nueva reserva de recurso:', reserva);
-    // 🔥 SOLUCIÓN: Manejar respuesta como texto
     return this.http.post(`${this.apiUrl}/reservaRecurso/crear`, reserva, {
       responseType: 'text' as 'json'
     }).pipe(
       map(response => {
         console.log('✅ Respuesta del servidor (recurso):', response);
-        // Intentar parsear como JSON, si falla devolver objeto simple
         try {
           return typeof response === 'string' ? JSON.parse(response) : response;
         } catch {
@@ -110,9 +124,21 @@ export class ReservaService {
     );
   }
 
-  actualizarReservaRecurso(id: number, reserva: ReservaRecursoDTO): Observable<any> {
+  actualizarReservaRecurso(id: number, reserva: any): Observable<any> {
     console.log(`Actualizando reserva de recurso con ID ${id}:`, reserva);
-    return this.http.put(`${this.apiUrl}/reservaRecurso/actualizar/${id}`, reserva);
+    // ⭐ Agregar responseType: 'text' igual que en eliminar
+    return this.http.put(`${this.apiUrl}/reservaRecurso/actualizar/${id}`, reserva, {
+      responseType: 'text' as 'json'
+    }).pipe(
+      map(response => {
+        console.log('✅ Respuesta del servidor:', response);
+        try {
+          return typeof response === 'string' ? JSON.parse(response) : response;
+        } catch {
+          return { success: true, message: response };
+        }
+      })
+    );
   }
 
   eliminarReservaRecurso(id: number): Observable<any> {
@@ -133,6 +159,10 @@ export class ReservaService {
       params: { fecha, material }
     });
   }
+
+  // ============================================
+  // HISTORIAL COMPLETO
+  // ============================================
 
   getHistorialCompleto(): Observable<[any[], any[]]> {
     console.log('Obteniendo historial completo de reservas (espacios y recursos)');

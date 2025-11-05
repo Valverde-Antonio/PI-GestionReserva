@@ -74,22 +74,20 @@ public class ReservaRecursoService {
                 throw new IllegalArgumentException("Formato de fecha inválido: " + dto.getFecha());
             }
 
-            // Verificar si ya existe una reserva con los mismos datos
-            List<ReservaRecurso> reservasExistentes = reservaRecursoRepository
-                    .findByFechaAndRecurso_Nombre(fecha, recurso.getNombre());
+            // ⭐ VALIDACIÓN CORREGIDA: Validar por ID en lugar de nombre
+            boolean existeReserva = reservaRecursoRepository
+                    .existsByFechaAndTramoHorarioAndRecurso_IdRecurso(
+                        fecha, 
+                        dto.getTramoHorario(), 
+                        dto.getIdRecurso()
+                    );
             
-            System.out.println("📋 Reservas existentes para esta fecha y recurso: " + reservasExistentes.size());
+            System.out.println("📋 ¿Existe reserva para estos datos? " + existeReserva);
             
-            for (ReservaRecurso r : reservasExistentes) {
-                System.out.println("  - Tramo existente: '" + r.getTramoHorario() + "'");
-                System.out.println("  - Tramo nuevo: '" + dto.getTramoHorario() + "'");
-                System.out.println("  - ¿Son iguales? " + r.getTramoHorario().equals(dto.getTramoHorario()));
-                
-                if (r.getTramoHorario().equals(dto.getTramoHorario())) {
-                    String mensaje = "Este horario ya está reservado para este material";
-                    System.err.println("❌ " + mensaje);
-                    throw new DataIntegrityViolationException(mensaje);
-                }
+            if (existeReserva) {
+                String mensaje = "Este horario ya está reservado para este material";
+                System.err.println("❌ " + mensaje);
+                throw new RuntimeException(mensaje);
             }
 
             // Crear la reserva

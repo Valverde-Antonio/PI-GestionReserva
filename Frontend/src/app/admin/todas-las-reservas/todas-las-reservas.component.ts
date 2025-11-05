@@ -11,7 +11,7 @@ import { ProfesorService } from '../../services/profesor.service';
 @Component({
   selector: 'app-todas-las-reservas',
   standalone: true,
-  imports: [CommonModule, FormsModule, ],
+  imports: [CommonModule, FormsModule],
   templateUrl: './todas-las-reservas.component.html',
   styleUrls: ['./todas-las-reservas.component.css']
 })
@@ -25,9 +25,18 @@ export class TodasLasReservasComponent implements OnInit {
   filtroAula: string = '';
   filtroTipo: string = 'Todas';
 
-  profesores: string[] = [];
-  espacios: { nombre: string }[] = [];
-  materiales: { nombre: string }[] = [];
+  profesores: any[] = []; // ⭐ Cambiado para guardar objetos completos
+  espacios: any[] = [];
+  materiales: any[] = [];
+
+  tramosHorarios: string[] = [
+    '08:00-09:00',
+    '09:00-10:00',
+    '10:00-11:00',
+    '11:30-12:30',
+    '12:30-13:30',
+    '13:30-14:30'
+  ];
 
   usuarioLogeado: string = '';
 
@@ -45,7 +54,7 @@ export class TodasLasReservasComponent implements OnInit {
     private recursoService: RecursoService,
     private espacioService: EspacioService,
     private profesorService: ProfesorService
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     this.usuarioLogeado = localStorage.getItem('nombreCompleto') || '';
@@ -58,7 +67,7 @@ export class TodasLasReservasComponent implements OnInit {
 
   cargarProfesores(): void {
     this.profesorService.getProfesores().subscribe(data => {
-      this.profesores = data.map((p: any) => p.nombre);
+      this.profesores = data; // ⭐ Guardamos objetos completos con ID y nombre
       console.log('📘 Profesores cargados:', this.profesores);
     });
   }
@@ -81,25 +90,29 @@ export class TodasLasReservasComponent implements OnInit {
     this.reservaService.getHistorialCompleto().subscribe(([espacios, recursos]: [any[], any[]]) => {
       const reservasEspacios = espacios.map((r: any) => ({
         id: r.idReserva,
+        idEspacio: r.idEspacio,
+        idProfesor: r.idProfesor,          // ⭐ YA GUARDAS ESTO
         espacio: r.nombreEspacio,
         recurso: '',
         fecha: r.fecha,
         horaInicio: r.tramoHorario,
         horaFin: r.tramoHorario,
         estado: 'Finalizada',
-        profesor: r.nombreProfesor,
+        profesor: r.nombreProfesor,         // ⭐ NOMBRE
         tipo: 'Aula'
       }));
 
       const reservasRecursos = recursos.map((r: any) => ({
         id: r.idReserva,
+        idRecurso: r.idRecurso,
+        idProfesor: r.idProfesor,          // ⭐ YA GUARDAS ESTO
         espacio: '',
         recurso: r.nombreRecurso,
         fecha: r.fecha,
         horaInicio: r.tramoHorario,
         horaFin: r.tramoHorario,
         estado: 'Finalizada',
-        profesor: r.nombreProfesor,
+        profesor: r.nombreProfesor,        // ⭐ NOMBRE
         tipo: 'Material'
       }));
 
@@ -138,26 +151,173 @@ export class TodasLasReservasComponent implements OnInit {
 
   exportarPDFTodasReservas(): void {
     const doc = new jsPDF();
-    doc.setFontSize(18);
-    doc.text('Reservas', doc.internal.pageSize.getWidth() / 2, 20, { align: 'center' });
 
+    const logo = new Image();
+    logo.src = 'assets/img/logoAlmudeyne.png'; // ⭐ Ruta correcta
+
+    logo.onload = () => {
+      // Logo centrado
+      const pageWidth = doc.internal.pageSize.getWidth();
+      //const logoWidth = 35;
+
+      doc.addImage(logo, 'PNG', 15, 10, 30, 30); // Logo a la izquierda
+
+      // Título centrado debajo del logo
+      doc.setFontSize(18);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Instituto de Educación Secundaria', pageWidth / 2, 52, { align: 'center' });
+
+      doc.setFontSize(16);
+      doc.text('ALMUDEYNE', pageWidth / 2, 60, { align: 'center' });
+
+      doc.setFontSize(14);
+      doc.setFont('helvetica', 'normal');
+      doc.text('Historial de Reservas', pageWidth / 2, 68, { align: 'center' });
+
+      // Línea decorativa
+      doc.setLineWidth(0.5);
+      doc.setDrawColor(60, 126, 102);
+      doc.line(50, 73, pageWidth - 50, 73);
+
+      // Información
+      doc.setFontSize(9);
+      doc.setTextColor(100);
+      const fechaGeneracion = new Date().toLocaleDateString('es-ES', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+      doc.text(`Fecha de generación: ${fechaGeneracion}`, pageWidth / 2, 80, { align: 'center' });
+      doc.text(`Total de reservas: ${this.filtradoReservas.length}`, pageWidth / 2, 86, { align: 'center' });
+
+      // Tabla
+      doc.setTextColor(0);
+      autoTable(doc, {
+        head: [['Tipo', 'Espacio/Material', 'Fecha', 'Tramo Horario', 'Profesor', 'Estado']],
+        body: this.filtradoReservas.map(r => [
+          r.tipo,
+          r.tipo === 'Aula' ? r.espacio : r.recurso,
+          r.fecha,
+          r.horaInicio,
+          r.profesor,
+          r.estado
+        ]),
+        startY: 93,
+        styles: {
+          halign: 'center',
+          valign: 'middle',
+          fontSize: 9,
+          cellPadding: 4
+        },
+        headStyles: {
+          fillColor: [60, 126, 102],
+          textColor: [255, 255, 255],
+          fontStyle: 'bold',
+          fontSize: 10
+        },
+        alternateRowStyles: {
+          fillColor: [248, 249, 250]
+        },
+        margin: { left: 15, right: 15 }
+      });
+
+      // Pie de página con número de página
+      const pageCount = doc.getNumberOfPages();
+      for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.setTextColor(150);
+        doc.text(
+          `Página ${i} de ${pageCount}`,
+          pageWidth / 2,
+          doc.internal.pageSize.getHeight() - 10,
+          { align: 'center' }
+        );
+
+        // Texto adicional en el pie
+        doc.text(
+          'IES Almudeyne - Sistema de Gestión de Reservas',
+          pageWidth / 2,
+          doc.internal.pageSize.getHeight() - 5,
+          { align: 'center' }
+        );
+      }
+
+      doc.save(`reservas_almudeyne_${new Date().getTime()}.pdf`);
+      console.log('📄 PDF generado con éxito con', this.filtradoReservas.length, 'reservas');
+    };
+
+    logo.onerror = () => {
+      console.warn('⚠️ Error al cargar el logo del instituto');
+      alert('No se pudo cargar el logo. Generando PDF sin imagen.');
+      this.generarPDFSinLogo();
+    };
+  }
+
+  generarPDFSinLogo(): void {
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.getWidth();
+
+    doc.setFontSize(18);
+    doc.setFont('helvetica', 'bold');
+    doc.text('IES ALMUDEYNE', pageWidth / 2, 20, { align: 'center' });
+
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'normal');
+    doc.text('Historial de Reservas', pageWidth / 2, 28, { align: 'center' });
+
+    doc.setLineWidth(0.5);
+    doc.setDrawColor(60, 126, 102);
+    doc.line(50, 33, pageWidth - 50, 33);
+
+    doc.setFontSize(9);
+    doc.setTextColor(100);
+    const fechaGeneracion = new Date().toLocaleDateString('es-ES');
+    doc.text(`Fecha: ${fechaGeneracion} | Total: ${this.filtradoReservas.length} reservas`, pageWidth / 2, 40, { align: 'center' });
+
+    doc.setTextColor(0);
     autoTable(doc, {
-      head: [['Espacio', 'Material', 'Fecha', 'Hora', 'Estado', 'Profesor']],
+      head: [['Tipo', 'Espacio/Material', 'Fecha', 'Tramo Horario', 'Profesor', 'Estado']],
       body: this.filtradoReservas.map(r => [
-        r.espacio || '-',
-        r.recurso || '-',
+        r.tipo,
+        r.tipo === 'Aula' ? r.espacio : r.recurso,
         r.fecha,
-        `${r.horaInicio} - ${r.horaFin}`,
-        r.estado,
-        r.profesor
+        r.horaInicio,
+        r.profesor,
+        r.estado
       ]),
-      startY: 30,
-      styles: { halign: 'center', valign: 'middle', fontSize: 10 },
-      headStyles: { fillColor: [60, 126, 102], textColor: [255, 255, 255] }
+      startY: 47,
+      styles: {
+        halign: 'center',
+        valign: 'middle',
+        fontSize: 9,
+        cellPadding: 4
+      },
+      headStyles: {
+        fillColor: [60, 126, 102],
+        textColor: [255, 255, 255],
+        fontStyle: 'bold'
+      },
+      alternateRowStyles: {
+        fillColor: [248, 249, 250]
+      }
     });
 
-    doc.save('todas-las-reservas.pdf');
-    console.log('📄 Exportado PDF con', this.filtradoReservas.length, 'reservas');
+    const pageCount = doc.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      doc.setFontSize(8);
+      doc.setTextColor(150);
+      doc.text(
+        `Página ${i} de ${pageCount}`,
+        pageWidth / 2,
+        doc.internal.pageSize.getHeight() - 10,
+        { align: 'center' }
+      );
+    }
+
+    doc.save(`reservas_almudeyne_${new Date().getTime()}.pdf`);
   }
 
   get totalPages(): number {
@@ -177,6 +337,7 @@ export class TodasLasReservasComponent implements OnInit {
 
   modificarReserva(reserva: any): void {
     this.reservaSeleccionada = { ...reserva };
+    console.log('📝 Reserva seleccionada para editar:', this.reservaSeleccionada);
     this.mostrarModalActualizar = true;
   }
 
@@ -185,14 +346,66 @@ export class TodasLasReservasComponent implements OnInit {
     this.reservaSeleccionada = null;
   }
 
+  // ⭐ MÉTODO CORREGIDO
   guardarCambios(): void {
     if (!this.reservaSeleccionada) return;
-    const index = this.reservas.findIndex(r => r.id === this.reservaSeleccionada.id);
-    if (index !== -1) {
-      this.reservas[index] = { ...this.reservaSeleccionada };
-      this.filtrarReservas();
-      this.cerrarModal();
-      console.log('✅ Reserva modificada:', this.reservaSeleccionada);
+
+    console.log('💾 Guardando cambios de reserva:', this.reservaSeleccionada);
+
+    // ⭐ USAR EL ID QUE YA TIENES EN LA RESERVA
+    // No necesitas buscar el profesor, ya tienes su ID
+
+    const dto: any = {
+      fecha: this.reservaSeleccionada.fecha,
+      tramoHorario: this.reservaSeleccionada.horaInicio,
+      idProfesor: this.reservaSeleccionada.idProfesor  // ⭐ USAR EL ID QUE YA TIENES
+    };
+
+    // Si el usuario cambió el profesor en el select, buscar el nuevo ID
+    const profesorCambiado = this.profesores.find(p => p.nombre === this.reservaSeleccionada.profesor);
+    if (profesorCambiado) {
+      dto.idProfesor = profesorCambiado.idProfesor;
+    }
+
+    // Determinar si es reserva de espacio o recurso
+    if (this.reservaSeleccionada.tipo === 'Aula') {
+      // Si el usuario cambió el espacio, buscar el nuevo ID
+      const espacioCambiado = this.espacios.find(e => e.nombre === this.reservaSeleccionada.espacio);
+      dto.idEspacio = espacioCambiado ? espacioCambiado.idEspacio : this.reservaSeleccionada.idEspacio;
+
+      console.log('📤 Enviando actualización de espacio:', dto);
+
+      this.reservaService.actualizarReservaEspacio(this.reservaSeleccionada.id, dto).subscribe({
+        next: (response) => {
+          console.log('✅ Reserva de espacio actualizada:', response);
+          alert('Reserva actualizada correctamente');
+          this.cerrarModal();
+          this.cargarReservas();
+        },
+        error: (error) => {
+          console.error('❌ Error al actualizar reserva de espacio:', error);
+          alert('Error al actualizar la reserva: ' + (error.error?.message || error.message));
+        }
+      });
+    } else {
+      // Si el usuario cambió el recurso, buscar el nuevo ID
+      const recursoCambiado = this.materiales.find(m => m.nombre === this.reservaSeleccionada.recurso);
+      dto.idRecurso = recursoCambiado ? recursoCambiado.idRecurso : this.reservaSeleccionada.idRecurso;
+
+      console.log('📤 Enviando actualización de recurso:', dto);
+
+      this.reservaService.actualizarReservaRecurso(this.reservaSeleccionada.id, dto).subscribe({
+        next: (response) => {
+          console.log('✅ Reserva de recurso actualizada:', response);
+          alert('Reserva actualizada correctamente');
+          this.cerrarModal();
+          this.cargarReservas();
+        },
+        error: (error) => {
+          console.error('❌ Error al actualizar reserva de recurso:', error);
+          alert('Error al actualizar la reserva: ' + (error.error?.message || error.message));
+        }
+      });
     }
   }
 
@@ -201,13 +414,39 @@ export class TodasLasReservasComponent implements OnInit {
     this.mostrarModalEliminar = true;
   }
 
+  // ⭐ MÉTODO ACTUALIZADO: Ahora elimina de la base de datos
   confirmarEliminacion(): void {
-    if (this.reservaAEliminar) {
-      this.reservas = this.reservas.filter(r => r !== this.reservaAEliminar);
-      this.filtrarReservas();
-      console.log('🗑️ Reserva eliminada:', this.reservaAEliminar);
+    if (!this.reservaAEliminar) return;
+
+    console.log('🗑️ Eliminando reserva:', this.reservaAEliminar);
+
+    if (this.reservaAEliminar.tipo === 'Aula') {
+      this.reservaService.eliminarReservaEspacio(this.reservaAEliminar.id).subscribe({
+        next: (response) => {
+          console.log('✅ Reserva de espacio eliminada:', response);
+          alert('Reserva eliminada correctamente');
+          this.cancelarEliminacion();
+          this.cargarReservas(); // Recargar para ver los cambios
+        },
+        error: (error) => {
+          console.error('❌ Error al eliminar reserva de espacio:', error);
+          alert('Error al eliminar la reserva');
+        }
+      });
+    } else {
+      this.reservaService.eliminarReservaRecurso(this.reservaAEliminar.id).subscribe({
+        next: (response) => {
+          console.log('✅ Reserva de recurso eliminada:', response);
+          alert('Reserva eliminada correctamente');
+          this.cancelarEliminacion();
+          this.cargarReservas(); // Recargar para ver los cambios
+        },
+        error: (error) => {
+          console.error('❌ Error al eliminar reserva de recurso:', error);
+          alert('Error al eliminar la reserva');
+        }
+      });
     }
-    this.cancelarEliminacion();
   }
 
   cancelarEliminacion(): void {
