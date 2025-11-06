@@ -63,13 +63,13 @@ export class TodasLasReservasComponent implements OnInit {
 
   ngOnInit(): void {
     this.usuarioLogeado = localStorage.getItem('nombreCompleto') || '';
-    
+
     // 🔥 ESTABLECER FECHA DE HOY POR DEFECTO
     this.filtroFecha = this.obtenerFechaHoy();
-    
+
     console.log('👤 Usuario logeado:', this.usuarioLogeado);
     console.log('📅 Fecha inicial:', this.filtroFecha);
-    
+
     this.cargarDatos();
   }
 
@@ -156,7 +156,7 @@ export class TodasLasReservasComponent implements OnInit {
         });
 
         console.log('📋 Reservas cargadas:', this.reservas);
-        
+
         // 🔥 NO establecer filtroProfesor aquí, queremos mostrar TODOS
         this.filtrarReservas();
         this.cargando = false;
@@ -173,7 +173,7 @@ export class TodasLasReservasComponent implements OnInit {
     const hoy = new Date();
     hoy.setHours(0, 0, 0, 0);
     const fechaReserva = new Date(fecha + 'T00:00:00');
-    
+
     if (fechaReserva < hoy) {
       return 'Finalizada';
     } else if (fechaReserva.getTime() === hoy.getTime()) {
@@ -189,12 +189,12 @@ export class TodasLasReservasComponent implements OnInit {
 
     this.filtradoReservas = this.reservas.filter(r => {
       const coincideFecha = filtroFecha ? r.fecha === filtroFecha : true;
-      const coincideMaterial = (filtroMaterial && r.tipo === 'Material') 
-        ? r.recurso === filtroMaterial 
+      const coincideMaterial = (filtroMaterial && r.tipo === 'Material')
+        ? r.recurso === filtroMaterial
         : true;
       const coincideProfesor = filtroProfesor ? r.profesor === filtroProfesor : true;
-      const coincideAula = (filtroAula && r.tipo === 'Aula') 
-        ? r.espacio === filtroAula 
+      const coincideAula = (filtroAula && r.tipo === 'Aula')
+        ? r.espacio === filtroAula
         : true;
       const coincideTipo = (filtroTipo === 'Todas') ? true : r.tipo === filtroTipo;
 

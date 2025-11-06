@@ -7,6 +7,7 @@ import { HeaderComponent } from '../../header/header.component';
 import { ReservaService } from '../../services/reserva.service';
 import { RecursoService } from '../../services/recurso.service';
 import { EspacioService } from '../../services/espacio.service';
+import { ProfesorService } from '../../services/profesor.service';  // 🔥 AGREGAR IMPORT
 import { AuthService } from '../../services/auth.service';
 
 @Component({
@@ -19,16 +20,20 @@ import { AuthService } from '../../services/auth.service';
 export class HistoricoReservasComponent implements OnInit {
   historial: any[] = [];
   filtradoReservas: any[] = [];
+  reservas: any[] = [];  // 🔥 AGREGAR esta propiedad
 
   filtroFecha: string = '';
   filtroMaterial: string = '';
   filtroAula: string = '';
   filtroEstado: string = '';
+  filtroTipo: string = 'Todas';  // 🔥 AGREGAR
+  filtroProfesor: string = '';   // 🔥 AGREGAR
 
   aulas: string[] = [];
-  materiales: string[] = [];
+  materiales: any[] = [];  // 🔥 CAMBIAR de string[] a any[]
   espacios: any[] = [];
   recursos: any[] = [];
+  profesores: any[] = [];  // 🔥 AGREGAR
 
   usuarioLogueado: string = '';
   idProfesorActual: number = 0;
@@ -60,21 +65,28 @@ export class HistoricoReservasComponent implements OnInit {
     private reservaService: ReservaService,
     private recursoService: RecursoService,
     private espacioService: EspacioService,
+    private profesorService: ProfesorService,  // 🔥 AGREGAR
     private authService: AuthService
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     this.usuarioLogueado = this.authService.getNombreCompleto();
     this.idProfesorActual = this.authService.getIdProfesor();
-    
+
+    // 🔥 AGREGAR: Establecer fecha de hoy por defecto
+    this.filtroFecha = this.obtenerFechaHoy();
+
     console.log('👤 Usuario actual:', this.usuarioLogueado, 'ID:', this.idProfesorActual);
-    
+
     this.cargarDatos();
   }
 
   cargarDatos(): void {
     this.cargando = true;
-    
+
+    // 🔥 AGREGAR: Cargar profesores
+    this.cargarProfesores();
+
     // Cargar espacios
     this.espacioService.getEspacios().subscribe({
       next: data => {
@@ -85,11 +97,11 @@ export class HistoricoReservasComponent implements OnInit {
       error: err => console.error('Error al cargar espacios:', err)
     });
 
-    // Cargar recursos
+    // 🔥 MODIFICAR: Cargar recursos como objetos
     this.recursoService.getRecursos().subscribe({
       next: data => {
         this.recursos = data;
-        this.materiales = data.map((r: any) => r.nombre).sort();
+        this.materiales = data;  // Mantener como objetos, no convertir a strings
         console.log('📦 Recursos cargados:', this.recursos);
       },
       error: err => console.error('Error al cargar recursos:', err)
@@ -97,6 +109,17 @@ export class HistoricoReservasComponent implements OnInit {
 
     // Cargar reservas
     this.cargarReservas();
+  }
+
+  // 🔥 AGREGAR: Método para cargar profesores
+  cargarProfesores(): void {
+    this.profesorService.getProfesores().subscribe({
+      next: data => {
+        this.profesores = data;
+        console.log('📘 Profesores cargados:', this.profesores);
+      },
+      error: err => console.error('Error al cargar profesores:', err)
+    });
   }
 
   cargarReservas(): void {
@@ -117,6 +140,7 @@ export class HistoricoReservasComponent implements OnInit {
             horaInicio: this.extraerHoraInicio(r.tramoHorario),
             tramoHorario: r.tramoHorario,
             estado: this.calcularEstado(r.fecha),
+            profesor: r.nombreProfesor,  // 🔥 AGREGAR
             idEspacio: r.idEspacio,
             idProfesor: r.idProfesor
           }));
@@ -136,6 +160,7 @@ export class HistoricoReservasComponent implements OnInit {
             horaInicio: this.extraerHoraInicio(r.tramoHorario),
             tramoHorario: r.tramoHorario,
             estado: this.calcularEstado(r.fecha),
+            profesor: r.nombreProfesor,  // 🔥 AGREGAR
             idRecurso: r.idRecurso,
             idProfesor: r.idProfesor
           }));
@@ -144,6 +169,8 @@ export class HistoricoReservasComponent implements OnInit {
           // Ordenar por fecha descendente (más reciente primero)
           return new Date(b.fecha).getTime() - new Date(a.fecha).getTime();
         });
+
+        this.reservas = this.historial;  // 🔥 AGREGAR: Asignar a reservas también
 
         console.log('📋 Mis reservas cargadas:', this.historial.length);
         this.filtrarReservas();
@@ -169,7 +196,7 @@ export class HistoricoReservasComponent implements OnInit {
     const hoy = new Date();
     hoy.setHours(0, 0, 0, 0);
     const fechaReserva = new Date(fecha + 'T00:00:00');
-    
+
     if (fechaReserva < hoy) {
       return 'Finalizada';
     } else if (fechaReserva.getTime() === hoy.getTime()) {
@@ -179,23 +206,29 @@ export class HistoricoReservasComponent implements OnInit {
     }
   }
 
+  // 🔥 MODIFICAR: Agregar filtros adicionales
   filtrarReservas(): void {
     this.filtradoReservas = this.historial.filter(h => {
       const coincideFecha = this.filtroFecha ? h.fecha === this.filtroFecha : true;
       const coincideMaterial = h.tipo === 'Material' ? (this.filtroMaterial ? h.recurso === this.filtroMaterial : true) : true;
       const coincideAula = h.tipo === 'Aula' ? (this.filtroAula ? h.espacio === this.filtroAula : true) : true;
       const coincideEstado = this.filtroEstado ? h.estado === this.filtroEstado : true;
-      return coincideFecha && coincideMaterial && coincideAula && coincideEstado;
+      const coincideProfesor = this.filtroProfesor ? h.profesor === this.filtroProfesor : true;  // 🔥 AGREGAR
+      const coincideTipo = (this.filtroTipo === 'Todas') ? true : h.tipo === this.filtroTipo;  // 🔥 AGREGAR
+
+      return coincideFecha && coincideMaterial && coincideAula && coincideEstado && coincideProfesor && coincideTipo;
     });
     this.currentPage = 1;
     console.log('🔍 Reservas filtradas:', this.filtradoReservas.length);
   }
 
   limpiarFiltros(): void {
-    this.filtroFecha = '';
+    this.filtroFecha = this.obtenerFechaHoy();  // 🔥 MODIFICAR: Volver a HOY
     this.filtroMaterial = '';
     this.filtroAula = '';
     this.filtroEstado = '';
+    this.filtroTipo = 'Todas';  // 🔥 AGREGAR
+    this.filtroProfesor = '';   // 🔥 AGREGAR
     this.filtrarReservas();
   }
 
@@ -347,6 +380,11 @@ export class HistoricoReservasComponent implements OnInit {
     this.mostrarModalEliminar = false;
   }
 
+  // 🔥 AGREGAR: Método exportarPDFTodasReservas
+  exportarPDFTodasReservas(): void {
+    this.exportarPDFMisReservas();  // Reutilizar el método existente
+  }
+
   exportarPDFMisReservas(): void {
     const doc = new jsPDF();
     doc.setFontSize(18);
@@ -379,7 +417,7 @@ export class HistoricoReservasComponent implements OnInit {
     doc.setFontSize(10);
     doc.text('IES ALMUDEYNE', 14, pageHeight - 10);
     doc.text(`Total: ${this.filtradoReservas.length} reservas`, doc.internal.pageSize.getWidth() - 50, pageHeight - 10);
-    
+
     doc.save(`mis-reservas-${new Date().getTime()}.pdf`);
     console.log('📄 PDF generado exitosamente');
   }

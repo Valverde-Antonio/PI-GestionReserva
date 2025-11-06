@@ -35,7 +35,7 @@
       <label class="form-label">Filtrar por profesor:</label>
       <select class="form-select" [(ngModel)]="filtroProfesor" (change)="filtrarReservas()">
         <option value="">Todos</option>
-        <option *ngFor="let prof of profesores" [value]="prof">{{ prof }}</option>
+        <option *ngFor="let prof of profesores" [value]="prof.nombre">{{ prof.nombre }}</option>
       </select>
     </div>
 
@@ -43,7 +43,8 @@
       <button class="btn btn-secondary w-100" (click)="limpiarFiltros()">Limpiar Filtros</button>
     </div>
     <div class="col-md-3 d-flex align-items-end">
-      <button class="btn btn-success w-100" (click)="exportarPDFTodasReservas()" [disabled]="filtradoReservas.length === 0">
+      <button class="btn btn-success w-100" (click)="exportarPDFTodasReservas()"
+        [disabled]="filtradoReservas.length === 0">
         <i class="bi bi-file-earmark-pdf"></i> Exportar a PDF
       </button>
     </div>
@@ -106,10 +107,10 @@
       <div class="mb-3">
         <label class="form-label">Profesor:</label>
         <select class="form-select" [(ngModel)]="reservaSeleccionada.profesor">
-          <option *ngFor="let prof of profesores" [value]="prof">{{ prof }}</option>
+          <option *ngFor="let prof of profesores" [value]="prof.nombre">{{ prof.nombre }}</option>
         </select>
       </div>
-      
+
       <!-- Mostrar campo Espacio solo si es tipo Aula -->
       <div class="mb-3" *ngIf="reservaSeleccionada?.tipo === 'Aula'">
         <label class="form-label">Espacio:</label>
@@ -119,7 +120,7 @@
           </option>
         </select>
       </div>
-      
+
       <!-- Mostrar campo Recurso solo si es tipo Material -->
       <div class="mb-3" *ngIf="reservaSeleccionada?.tipo === 'Material'">
         <label class="form-label">Recurso:</label>
@@ -129,12 +130,12 @@
           </option>
         </select>
       </div>
-     
+
       <div class="mb-3">
         <label class="form-label">Fecha:</label>
         <input type="date" class="form-control" [(ngModel)]="reservaSeleccionada.fecha" />
       </div>
-      
+
       <!-- Select de Tramo Horario -->
       <div class="mb-3">
         <label class="form-label">Tramo Horario:</label>
