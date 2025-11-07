@@ -1,6 +1,6 @@
 <div class="container mt-4">
   <h2 class="mb-3">
-    <i class="bi bi-calendar-check"></i> Todas las Reservas
+    <i class="bi bi-calendar-check"></i> Mis Reservas
   </h2>
 
   <!-- Loading spinner -->
@@ -26,7 +26,7 @@
           </div>
 
           <!-- Tipo (Aula/Material) -->
-          <div class="col-md-2">
+          <div class="col-md-3">
             <label class="form-label"><i class="bi bi-tag"></i> Tipo:</label>
             <select class="form-select" [(ngModel)]="filtroTipo" (change)="filtrarReservas()">
               <option value="Todas">Todas</option>
@@ -57,16 +57,7 @@
             </select>
           </div>
 
-          <!-- Profesor -->
-          <div class="col-md-3">
-            <label class="form-label"><i class="bi bi-person"></i> Profesor:</label>
-            <select class="form-select" [(ngModel)]="filtroProfesor" (change)="filtrarReservas()">
-              <option value="">Todos los profesores</option>
-              <option *ngFor="let prof of profesores" [value]="prof.nombre">
-                {{ prof.nombre }}
-              </option>
-            </select>
-          </div>
+          <!-- SIN SELECT DE PROFESOR - Se eliminó porque solo ve sus reservas -->
 
           <!-- Botones -->
           <div class="col-md-12 d-flex gap-2">
@@ -99,7 +90,8 @@
            [ngClass]="{
              'border-warning': r.estado === 'Pendiente',
              'border-info': r.estado === 'En curso',
-             'border-success': r.estado === 'Finalizada'
+             'border-success': r.estado === 'Finalizada',
+             'border-secondary': !esMiReserva(r)
            }">
         <div class="card-body">
           <div class="row align-items-center">
@@ -115,6 +107,10 @@
                       }">
                   {{ r.estado }}
                 </span>
+                <!-- Badge para indicar si es reserva propia o de otro profesor -->
+                <span class="badge bg-secondary ms-2" *ngIf="!esMiReserva(r)">
+                  <i class="bi bi-lock"></i> Solo lectura
+                </span>
               </h5>
               <p class="card-text mb-0">
                 <i class="bi bi-calendar3"></i> <strong>Fecha:</strong> {{ r.fecha }}<br>
@@ -125,14 +121,15 @@
             </div>
             <div class="col-md-4 text-end">
               <div class="d-flex justify-content-end gap-2">
+                <!-- Botones solo habilitados si es MI reserva -->
                 <button class="btn btn-outline-primary btn-sm" 
                         (click)="modificarReserva(r)"
-                        [disabled]="procesando">
+                        [disabled]="procesando || !esMiReserva(r)">
                   <i class="bi bi-pencil"></i> Editar
                 </button>
                 <button class="btn btn-outline-danger btn-sm" 
                         (click)="eliminarReserva(r)"
-                        [disabled]="procesando">
+                        [disabled]="procesando || !esMiReserva(r)">
                   <i class="bi bi-trash"></i> Eliminar
                 </button>
               </div>
@@ -185,15 +182,7 @@
         <i class="bi bi-info-circle"></i> Editando reserva de <strong>{{ reservaSeleccionada?.tipo }}</strong>
       </div>
 
-      <!-- Profesor -->
-      <div class="mb-3">
-        <label class="form-label"><i class="bi bi-person-badge"></i> Profesor:</label>
-        <select class="form-select" [(ngModel)]="reservaSeleccionada.profesor">
-          <option *ngFor="let prof of profesores" [value]="prof.nombre">
-            {{ prof.nombre }}
-          </option>
-        </select>
-      </div>
+      <!-- SIN SELECT DE PROFESOR -->
       
       <!-- Mostrar campo Espacio solo si es tipo Aula -->
       <div class="mb-3" *ngIf="reservaSeleccionada?.tipo === 'Aula'">

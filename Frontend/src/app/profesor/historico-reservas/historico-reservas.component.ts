@@ -7,7 +7,7 @@ import { HeaderComponent } from '../../header/header.component';
 import { ReservaService } from '../../services/reserva.service';
 import { RecursoService } from '../../services/recurso.service';
 import { EspacioService } from '../../services/espacio.service';
-import { ProfesorService } from '../../services/profesor.service';  // 🔥 AGREGAR IMPORT
+import { ProfesorService } from '../../services/profesor.service';
 import { AuthService } from '../../services/auth.service';
 
 @Component({
@@ -20,20 +20,19 @@ import { AuthService } from '../../services/auth.service';
 export class HistoricoReservasComponent implements OnInit {
   historial: any[] = [];
   filtradoReservas: any[] = [];
-  reservas: any[] = [];  // 🔥 AGREGAR esta propiedad
+  reservas: any[] = [];
 
   filtroFecha: string = '';
   filtroMaterial: string = '';
   filtroAula: string = '';
   filtroEstado: string = '';
-  filtroTipo: string = 'Todas';  // 🔥 AGREGAR
-  filtroProfesor: string = '';   // 🔥 AGREGAR
+  filtroTipo: string = 'Todas';
 
   aulas: string[] = [];
-  materiales: any[] = [];  // 🔥 CAMBIAR de string[] a any[]
+  materiales: any[] = [];
   espacios: any[] = [];
   recursos: any[] = [];
-  profesores: any[] = [];  // 🔥 AGREGAR
+  profesores: any[] = [];
 
   usuarioLogueado: string = '';
   idProfesorActual: number = 0;
@@ -65,7 +64,7 @@ export class HistoricoReservasComponent implements OnInit {
     private reservaService: ReservaService,
     private recursoService: RecursoService,
     private espacioService: EspacioService,
-    private profesorService: ProfesorService,  // 🔥 AGREGAR
+    private profesorService: ProfesorService,
     private authService: AuthService
   ) { }
 
@@ -73,7 +72,6 @@ export class HistoricoReservasComponent implements OnInit {
     this.usuarioLogueado = this.authService.getNombreCompleto();
     this.idProfesorActual = this.authService.getIdProfesor();
 
-    // 🔥 AGREGAR: Establecer fecha de hoy por defecto
     this.filtroFecha = this.obtenerFechaHoy();
 
     console.log('👤 Usuario actual:', this.usuarioLogueado, 'ID:', this.idProfesorActual);
@@ -84,10 +82,8 @@ export class HistoricoReservasComponent implements OnInit {
   cargarDatos(): void {
     this.cargando = true;
 
-    // 🔥 AGREGAR: Cargar profesores
     this.cargarProfesores();
 
-    // Cargar espacios
     this.espacioService.getEspacios().subscribe({
       next: data => {
         this.espacios = data;
@@ -97,21 +93,18 @@ export class HistoricoReservasComponent implements OnInit {
       error: err => console.error('Error al cargar espacios:', err)
     });
 
-    // 🔥 MODIFICAR: Cargar recursos como objetos
     this.recursoService.getRecursos().subscribe({
       next: data => {
         this.recursos = data;
-        this.materiales = data;  // Mantener como objetos, no convertir a strings
+        this.materiales = data;
         console.log('📦 Recursos cargados:', this.recursos);
       },
       error: err => console.error('Error al cargar recursos:', err)
     });
 
-    // Cargar reservas
     this.cargarReservas();
   }
 
-  // 🔥 AGREGAR: Método para cargar profesores
   cargarProfesores(): void {
     this.profesorService.getProfesores().subscribe({
       next: data => {
@@ -122,15 +115,12 @@ export class HistoricoReservasComponent implements OnInit {
     });
   }
 
+  // 🔥 MODIFICADO: Ahora carga TODAS las reservas, no solo las del profesor actual
   cargarReservas(): void {
     this.reservaService.getHistorialCompleto().subscribe({
       next: ([reservasEspacios, reservasRecursos]: [any[], any[]]) => {
-        // Procesar reservas de espacios
-        const espaciosUsuario = (reservasEspacios || [])
-          .filter((r: any) => {
-            const idProfesor = r.idProfesor;
-            return Number(idProfesor) === this.idProfesorActual;
-          })
+        // Procesar TODAS las reservas de espacios (sin filtrar por profesor)
+        const todasReservasEspacios = (reservasEspacios || [])
           .map((r: any) => ({
             id: r.idReserva,
             tipo: 'Aula',
@@ -140,17 +130,13 @@ export class HistoricoReservasComponent implements OnInit {
             horaInicio: this.extraerHoraInicio(r.tramoHorario),
             tramoHorario: r.tramoHorario,
             estado: this.calcularEstado(r.fecha),
-            profesor: r.nombreProfesor,  // 🔥 AGREGAR
+            profesor: r.nombreProfesor,
             idEspacio: r.idEspacio,
-            idProfesor: r.idProfesor
+            idProfesor: r.idProfesor  // 🔥 Importante: guardar el idProfesor
           }));
 
-        // Procesar reservas de recursos
-        const recursosUsuario = (reservasRecursos || [])
-          .filter((r: any) => {
-            const idProfesor = r.idProfesor;
-            return Number(idProfesor) === this.idProfesorActual;
-          })
+        // Procesar TODAS las reservas de recursos (sin filtrar por profesor)
+        const todasReservasRecursos = (reservasRecursos || [])
           .map((r: any) => ({
             id: r.idReserva,
             tipo: 'Material',
@@ -160,19 +146,19 @@ export class HistoricoReservasComponent implements OnInit {
             horaInicio: this.extraerHoraInicio(r.tramoHorario),
             tramoHorario: r.tramoHorario,
             estado: this.calcularEstado(r.fecha),
-            profesor: r.nombreProfesor,  // 🔥 AGREGAR
+            profesor: r.nombreProfesor,
             idRecurso: r.idRecurso,
-            idProfesor: r.idProfesor
+            idProfesor: r.idProfesor  // 🔥 Importante: guardar el idProfesor
           }));
 
-        this.historial = [...espaciosUsuario, ...recursosUsuario].sort((a, b) => {
-          // Ordenar por fecha descendente (más reciente primero)
+        this.historial = [...todasReservasEspacios, ...todasReservasRecursos].sort((a, b) => {
           return new Date(b.fecha).getTime() - new Date(a.fecha).getTime();
         });
 
-        this.reservas = this.historial;  // 🔥 AGREGAR: Asignar a reservas también
+        this.reservas = this.historial;
 
-        console.log('📋 Mis reservas cargadas:', this.historial.length);
+        console.log('📋 Todas las reservas cargadas:', this.historial.length);
+        console.log('📋 Mis reservas:', this.historial.filter(r => this.esMiReserva(r)).length);
         this.filtrarReservas();
         this.cargando = false;
       },
@@ -183,9 +169,13 @@ export class HistoricoReservasComponent implements OnInit {
     });
   }
 
+  // 🔥 NUEVO: Método para identificar si una reserva es del profesor actual
+  esMiReserva(reserva: any): boolean {
+    return Number(reserva.idProfesor) === this.idProfesorActual;
+  }
+
   extraerHoraInicio(tramoHorario: string): string {
     if (!tramoHorario) return '';
-    // Si viene "08:00-09:00", extraer "08:00"
     if (tramoHorario.includes('-')) {
       return tramoHorario.split('-')[0].trim();
     }
@@ -206,29 +196,26 @@ export class HistoricoReservasComponent implements OnInit {
     }
   }
 
-  // 🔥 MODIFICAR: Agregar filtros adicionales
   filtrarReservas(): void {
     this.filtradoReservas = this.historial.filter(h => {
       const coincideFecha = this.filtroFecha ? h.fecha === this.filtroFecha : true;
       const coincideMaterial = h.tipo === 'Material' ? (this.filtroMaterial ? h.recurso === this.filtroMaterial : true) : true;
       const coincideAula = h.tipo === 'Aula' ? (this.filtroAula ? h.espacio === this.filtroAula : true) : true;
       const coincideEstado = this.filtroEstado ? h.estado === this.filtroEstado : true;
-      const coincideProfesor = this.filtroProfesor ? h.profesor === this.filtroProfesor : true;  // 🔥 AGREGAR
-      const coincideTipo = (this.filtroTipo === 'Todas') ? true : h.tipo === this.filtroTipo;  // 🔥 AGREGAR
+      const coincideTipo = (this.filtroTipo === 'Todas') ? true : h.tipo === this.filtroTipo;
 
-      return coincideFecha && coincideMaterial && coincideAula && coincideEstado && coincideProfesor && coincideTipo;
+      return coincideFecha && coincideMaterial && coincideAula && coincideEstado && coincideTipo;
     });
     this.currentPage = 1;
     console.log('🔍 Reservas filtradas:', this.filtradoReservas.length);
   }
 
   limpiarFiltros(): void {
-    this.filtroFecha = this.obtenerFechaHoy();  // 🔥 MODIFICAR: Volver a HOY
+    this.filtroFecha = this.obtenerFechaHoy();
     this.filtroMaterial = '';
     this.filtroAula = '';
     this.filtroEstado = '';
-    this.filtroTipo = 'Todas';  // 🔥 AGREGAR
-    this.filtroProfesor = '';   // 🔥 AGREGAR
+    this.filtroTipo = 'Todas';
     this.filtrarReservas();
   }
 
@@ -247,8 +234,13 @@ export class HistoricoReservasComponent implements OnInit {
     }
   }
 
+  // 🔥 MODIFICADO: Solo permite editar si es MI reserva
   modificarReserva(reserva: any): void {
-    // Solo permitir editar reservas pendientes o en curso
+    if (!this.esMiReserva(reserva)) {
+      alert('No puedes modificar reservas de otros profesores');
+      return;
+    }
+
     if (reserva.estado === 'Finalizada') {
       alert('No se pueden modificar reservas finalizadas');
       return;
@@ -325,8 +317,13 @@ export class HistoricoReservasComponent implements OnInit {
     }
   }
 
+  // 🔥 MODIFICADO: Solo permite eliminar si es MI reserva
   eliminarReserva(reserva: any): void {
-    // Solo permitir eliminar reservas pendientes o en curso
+    if (!this.esMiReserva(reserva)) {
+      alert('No puedes eliminar reservas de otros profesores');
+      return;
+    }
+
     if (reserva.estado === 'Finalizada') {
       alert('No se pueden eliminar reservas finalizadas');
       return;
@@ -380,9 +377,8 @@ export class HistoricoReservasComponent implements OnInit {
     this.mostrarModalEliminar = false;
   }
 
-  // 🔥 AGREGAR: Método exportarPDFTodasReservas
   exportarPDFTodasReservas(): void {
-    this.exportarPDFMisReservas();  // Reutilizar el método existente
+    this.exportarPDFMisReservas();
   }
 
   exportarPDFMisReservas(): void {
