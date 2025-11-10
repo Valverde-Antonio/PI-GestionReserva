@@ -19,10 +19,9 @@ export class TodasLasReservasComponent implements OnInit {
   reservas: any[] = [];
   filtradoReservas: any[] = [];
 
-  // 🔥 CORREGIDO: Fecha por defecto es HOY
   filtroFecha: string = '';
   filtroMaterial: string = '';
-  filtroProfesor: string = '';  // 🔥 Vacío por defecto = "Todos"
+  filtroProfesor: string = '';
   filtroAula: string = '';
   filtroTipo: string = 'Todas';
 
@@ -50,6 +49,15 @@ export class TodasLasReservasComponent implements OnInit {
   mostrarModalEliminar: boolean = false;
   reservaAEliminar: any = null;
 
+  // 🔥 NUEVOS: Modales para directivo
+  mostrarModalConflicto: boolean = false;
+  conflictoInfo: any = null;
+  reservaConflictiva: any = null; // La reserva que está bloqueando
+
+  mostrarModalInformativo: boolean = false;
+  mensajeInformativo: string = '';
+  tipoMensaje: 'success' | 'error' | 'warning' | 'info' = 'info';
+
   // Loading states
   cargando: boolean = false;
   procesando: boolean = false;
@@ -63,8 +71,6 @@ export class TodasLasReservasComponent implements OnInit {
 
   ngOnInit(): void {
     this.usuarioLogeado = localStorage.getItem('nombreCompleto') || '';
-
-    // 🔥 ESTABLECER FECHA DE HOY POR DEFECTO
     this.filtroFecha = this.obtenerFechaHoy();
 
     console.log('👤 Usuario logeado:', this.usuarioLogeado);
@@ -73,7 +79,6 @@ export class TodasLasReservasComponent implements OnInit {
     this.cargarDatos();
   }
 
-  // 🔥 NUEVO MÉTODO: Obtener fecha de hoy en formato YYYY-MM-DD
   obtenerFechaHoy(): string {
     const hoy = new Date();
     const year = hoy.getFullYear();
@@ -132,6 +137,7 @@ export class TodasLasReservasComponent implements OnInit {
           fecha: r.fecha,
           horaInicio: r.tramoHorario,
           horaFin: r.tramoHorario,
+          tramoHorario: r.tramoHorario,
           estado: this.calcularEstado(r.fecha),
           profesor: r.nombreProfesor,
           tipo: 'Aula'
@@ -146,6 +152,7 @@ export class TodasLasReservasComponent implements OnInit {
           fecha: r.fecha,
           horaInicio: r.tramoHorario,
           horaFin: r.tramoHorario,
+          tramoHorario: r.tramoHorario,
           estado: this.calcularEstado(r.fecha),
           profesor: r.nombreProfesor,
           tipo: 'Material'
@@ -157,7 +164,6 @@ export class TodasLasReservasComponent implements OnInit {
 
         console.log('📋 Reservas cargadas:', this.reservas);
 
-        // 🔥 NO establecer filtroProfesor aquí, queremos mostrar TODOS
         this.filtrarReservas();
         this.cargando = false;
       },
@@ -168,7 +174,6 @@ export class TodasLasReservasComponent implements OnInit {
     });
   }
 
-  // 🔥 NUEVO: Calcular estado de la reserva
   calcularEstado(fecha: string): string {
     const hoy = new Date();
     hoy.setHours(0, 0, 0, 0);
@@ -206,11 +211,11 @@ export class TodasLasReservasComponent implements OnInit {
   }
 
   limpiarFiltros(): void {
-    this.filtroFecha = this.obtenerFechaHoy();  // 🔥 Volver a HOY
+    this.filtroFecha = this.obtenerFechaHoy();
     this.filtroMaterial = '';
     this.filtroAula = '';
     this.filtroTipo = 'Todas';
-    this.filtroProfesor = '';  // 🔥 Todos los profesores
+    this.filtroProfesor = '';
     this.filtrarReservas();
   }
 
@@ -402,6 +407,7 @@ export class TodasLasReservasComponent implements OnInit {
     this.reservaSeleccionada = null;
   }
 
+  // 🔥 NUEVA LÓGICA: Verificar disponibilidad antes de guardar (CON PRIVILEGIOS DE DIRECTIVO)
   guardarCambios(): void {
     if (!this.reservaSeleccionada || this.procesando) return;
 
@@ -425,43 +431,190 @@ export class TodasLasReservasComponent implements OnInit {
       const espacioCambiado = this.espacios.find(e => e.nombre === this.reservaSeleccionada.espacio);
       dto.idEspacio = espacioCambiado ? espacioCambiado.idEspacio : this.reservaSeleccionada.idEspacio;
 
-      console.log('📤 Enviando actualización de espacio:', dto);
-
-      this.reservaService.actualizarReservaEspacio(this.reservaSeleccionada.id, dto).subscribe({
-        next: () => {
-          console.log('✅ Reserva de espacio actualizada');
-          alert('Reserva actualizada correctamente');
-          this.procesando = false;
-          this.cerrarModal();
-          this.cargarReservas();
+      // 🔥 Verificar disponibilidad
+      this.reservaService.verificarDisponibilidadEspacio(
+        this.reservaSeleccionada.fecha,
+        this.reservaSeleccionada.horaInicio,
+        dto.idEspacio,
+        this.reservaSeleccionada.id
+      ).subscribe({
+        next: (resultado) => {
+          console.log('📊 Resultado verificación:', resultado);
+          
+          if (resultado.disponible) {
+            // ✅ Está disponible, proceder a guardar
+            this.actualizarReservaEspacio(dto);
+          } else {
+            // ❌ NO está disponible - MOSTRAR MODAL DE CONFLICTO PARA DIRECTIVO
+            this.procesando = false;
+            this.conflictoInfo = {
+              nombreEspacio: this.reservaSeleccionada.espacio,
+              reservadoPor: resultado.reservadoPor,
+              fecha: this.reservaSeleccionada.fecha,
+              tramo: this.reservaSeleccionada.horaInicio,
+              idReservaConflictiva: resultado.idReserva
+            };
+            
+            // 🔥 Buscar la reserva conflictiva completa
+            this.reservaConflictiva = this.reservas.find(r => r.id === resultado.idReserva);
+            
+            this.mostrarModalConflicto = true;
+          }
         },
         error: (error) => {
-          console.error('❌ Error al actualizar reserva de espacio:', error);
-          alert('Error al actualizar la reserva: ' + (error.error?.message || error.message));
+          console.error('❌ Error al verificar disponibilidad:', error);
+          this.mostrarMensajeInformativo('Error al verificar disponibilidad', 'error');
           this.procesando = false;
         }
       });
     } else {
+      // Material
       const recursoCambiado = this.materiales.find(m => m.nombre === this.reservaSeleccionada.recurso);
       dto.idRecurso = recursoCambiado ? recursoCambiado.idRecurso : this.reservaSeleccionada.idRecurso;
 
-      console.log('📤 Enviando actualización de recurso:', dto);
-
-      this.reservaService.actualizarReservaRecurso(this.reservaSeleccionada.id, dto).subscribe({
-        next: () => {
-          console.log('✅ Reserva de recurso actualizada');
-          alert('Reserva actualizada correctamente');
-          this.procesando = false;
-          this.cerrarModal();
-          this.cargarReservas();
+      // 🔥 Verificar disponibilidad
+      this.reservaService.verificarDisponibilidadRecurso(
+        this.reservaSeleccionada.fecha,
+        this.reservaSeleccionada.horaInicio,
+        dto.idRecurso,
+        this.reservaSeleccionada.id
+      ).subscribe({
+        next: (resultado) => {
+          console.log('📊 Resultado verificación:', resultado);
+          
+          if (resultado.disponible) {
+            // ✅ Está disponible, proceder a guardar
+            this.actualizarReservaRecurso(dto);
+          } else {
+            // ❌ NO está disponible - MOSTRAR MODAL DE CONFLICTO PARA DIRECTIVO
+            this.procesando = false;
+            this.conflictoInfo = {
+              nombreRecurso: this.reservaSeleccionada.recurso,
+              reservadoPor: resultado.reservadoPor,
+              fecha: this.reservaSeleccionada.fecha,
+              tramo: this.reservaSeleccionada.horaInicio,
+              idReservaConflictiva: resultado.idReserva
+            };
+            
+            // 🔥 Buscar la reserva conflictiva completa
+            this.reservaConflictiva = this.reservas.find(r => r.id === resultado.idReserva);
+            
+            this.mostrarModalConflicto = true;
+          }
         },
         error: (error) => {
-          console.error('❌ Error al actualizar reserva de recurso:', error);
-          alert('Error al actualizar la reserva: ' + (error.error?.message || error.message));
+          console.error('❌ Error al verificar disponibilidad:', error);
+          this.mostrarMensajeInformativo('Error al verificar disponibilidad', 'error');
           this.procesando = false;
         }
       });
     }
+  }
+
+  // 🔥 Métodos auxiliares para actualizar
+  actualizarReservaEspacio(dto: any): void {
+    console.log('📤 Enviando actualización de espacio:', dto);
+
+    this.reservaService.actualizarReservaEspacio(this.reservaSeleccionada.id, dto).subscribe({
+      next: () => {
+        console.log('✅ Reserva de espacio actualizada');
+        this.mostrarMensajeInformativo('Reserva actualizada correctamente', 'success');
+        this.procesando = false;
+        this.cerrarModal();
+        this.cargarReservas();
+      },
+      error: (error) => {
+        console.error('❌ Error al actualizar reserva de espacio:', error);
+        this.mostrarMensajeInformativo('Error al actualizar la reserva: ' + (error.error?.message || error.message), 'error');
+        this.procesando = false;
+      }
+    });
+  }
+
+  actualizarReservaRecurso(dto: any): void {
+    console.log('📤 Enviando actualización de recurso:', dto);
+
+    this.reservaService.actualizarReservaRecurso(this.reservaSeleccionada.id, dto).subscribe({
+      next: () => {
+        console.log('✅ Reserva de recurso actualizada');
+        this.mostrarMensajeInformativo('Reserva actualizada correctamente', 'success');
+        this.procesando = false;
+        this.cerrarModal();
+        this.cargarReservas();
+      },
+      error: (error) => {
+        console.error('❌ Error al actualizar reserva de recurso:', error);
+        this.mostrarMensajeInformativo('Error al actualizar la reserva: ' + (error.error?.message || error.message), 'error');
+        this.procesando = false;
+      }
+    });
+  }
+
+  // 🔥 NUEVO: Eliminar reserva conflictiva y proceder con la modificación
+  eliminarReservaConflictivaYModificar(): void {
+    if (!this.reservaConflictiva || this.procesando) return;
+
+    console.log('🗑️ Eliminando reserva conflictiva:', this.reservaConflictiva);
+    this.procesando = true;
+
+    // Determinar si es espacio o recurso
+    if (this.reservaConflictiva.tipo === 'Aula') {
+      this.reservaService.eliminarReservaEspacio(this.reservaConflictiva.id).subscribe({
+        next: () => {
+          console.log('✅ Reserva conflictiva de espacio eliminada');
+          this.mostrarMensajeInformativo('Reserva conflictiva eliminada. Procediendo con la modificación...', 'info');
+          
+          // Cerrar modal de conflicto
+          this.cerrarModalConflicto();
+          
+          // Proceder con la modificación original
+          setTimeout(() => {
+            this.procesando = false;
+            this.guardarCambios();
+          }, 500);
+        },
+        error: (error) => {
+          console.error('❌ Error al eliminar reserva conflictiva:', error);
+          this.mostrarMensajeInformativo('Error al eliminar la reserva conflictiva', 'error');
+          this.procesando = false;
+        }
+      });
+    } else {
+      this.reservaService.eliminarReservaRecurso(this.reservaConflictiva.id).subscribe({
+        next: () => {
+          console.log('✅ Reserva conflictiva de recurso eliminada');
+          this.mostrarMensajeInformativo('Reserva conflictiva eliminada. Procediendo con la modificación...', 'info');
+          
+          // Cerrar modal de conflicto
+          this.cerrarModalConflicto();
+          
+          // Proceder con la modificación original
+          setTimeout(() => {
+            this.procesando = false;
+            this.guardarCambios();
+          }, 500);
+        },
+        error: (error) => {
+          console.error('❌ Error al eliminar reserva conflictiva:', error);
+          this.mostrarMensajeInformativo('Error al eliminar la reserva conflictiva', 'error');
+          this.procesando = false;
+        }
+      });
+    }
+  }
+
+  // 🔥 NUEVO: Mantener reserva actual (no hacer cambios)
+  mantenerReservaActual(): void {
+    console.log('✅ Directivo decidió mantener la reserva original');
+    this.cerrarModalConflicto();
+    this.cerrarModal();
+    this.mostrarMensajeInformativo('No se realizaron cambios en la reserva', 'info');
+  }
+
+  cerrarModalConflicto(): void {
+    this.mostrarModalConflicto = false;
+    this.conflictoInfo = null;
+    this.reservaConflictiva = null;
   }
 
   eliminarReserva(reserva: any): void {
@@ -479,14 +632,14 @@ export class TodasLasReservasComponent implements OnInit {
       this.reservaService.eliminarReservaEspacio(this.reservaAEliminar.id).subscribe({
         next: () => {
           console.log('✅ Reserva de espacio eliminada');
-          alert('Reserva eliminada correctamente');
+          this.mostrarMensajeInformativo('Reserva eliminada correctamente', 'success');
           this.procesando = false;
           this.cancelarEliminacion();
           this.cargarReservas();
         },
         error: (error) => {
           console.error('❌ Error al eliminar reserva de espacio:', error);
-          alert('Error al eliminar la reserva');
+          this.mostrarMensajeInformativo('Error al eliminar la reserva', 'error');
           this.procesando = false;
         }
       });
@@ -494,14 +647,14 @@ export class TodasLasReservasComponent implements OnInit {
       this.reservaService.eliminarReservaRecurso(this.reservaAEliminar.id).subscribe({
         next: () => {
           console.log('✅ Reserva de recurso eliminada');
-          alert('Reserva eliminada correctamente');
+          this.mostrarMensajeInformativo('Reserva eliminada correctamente', 'success');
           this.procesando = false;
           this.cancelarEliminacion();
           this.cargarReservas();
         },
         error: (error) => {
           console.error('❌ Error al eliminar reserva de recurso:', error);
-          alert('Error al eliminar la reserva');
+          this.mostrarMensajeInformativo('Error al eliminar la reserva', 'error');
           this.procesando = false;
         }
       });
@@ -511,5 +664,17 @@ export class TodasLasReservasComponent implements OnInit {
   cancelarEliminacion(): void {
     this.reservaAEliminar = null;
     this.mostrarModalEliminar = false;
+  }
+
+  // 🔥 NUEVO: Sistema de mensajes informativos
+  mostrarMensajeInformativo(mensaje: string, tipo: 'success' | 'error' | 'warning' | 'info'): void {
+    this.mensajeInformativo = mensaje;
+    this.tipoMensaje = tipo;
+    this.mostrarModalInformativo = true;
+  }
+
+  cerrarModalInformativo(): void {
+    this.mostrarModalInformativo = false;
+    this.mensajeInformativo = '';
   }
 }

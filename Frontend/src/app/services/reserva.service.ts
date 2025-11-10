@@ -60,7 +60,6 @@ export class ReservaService {
 
   actualizarReservaEspacio(id: number, reserva: any): Observable<any> {
     console.log(`Actualizando reserva de espacio con ID ${id}:`, reserva);
-    // ⭐ Agregar responseType: 'text' igual que en eliminar
     return this.http.put(`${this.apiUrl}/reservaEspacio/actualizar/${id}`, reserva, {
       responseType: 'text' as 'json'
     }).pipe(
@@ -126,7 +125,6 @@ export class ReservaService {
 
   actualizarReservaRecurso(id: number, reserva: any): Observable<any> {
     console.log(`Actualizando reserva de recurso con ID ${id}:`, reserva);
-    // ⭐ Agregar responseType: 'text' igual que en eliminar
     return this.http.put(`${this.apiUrl}/reservaRecurso/actualizar/${id}`, reserva, {
       responseType: 'text' as 'json'
     }).pipe(
@@ -158,6 +156,28 @@ export class ReservaService {
     return this.http.get<ReservaRecursoDTO[]>(`${this.apiUrl}/reservaRecurso/buscar`, {
       params: { fecha, material }
     });
+  }
+
+  // ============================================
+  // VERIFICACIÓN DE DISPONIBILIDAD
+  // ============================================
+
+  verificarDisponibilidadEspacio(fecha: string, tramoHorario: string, idEspacio: number, idReservaActual?: number): Observable<any> {
+    console.log('🔍 Verificando disponibilidad de espacio:', { fecha, tramoHorario, idEspacio, idReservaActual });
+    let params: any = { fecha, tramoHorario, idEspacio: idEspacio.toString() };
+    if (idReservaActual) {
+      params.idReservaActual = idReservaActual.toString();
+    }
+    return this.http.get<any>(`${this.apiUrl}/reservaEspacio/verificar-disponibilidad`, { params });
+  }
+
+  verificarDisponibilidadRecurso(fecha: string, tramoHorario: string, idRecurso: number, idReservaActual?: number): Observable<any> {
+    console.log('🔍 Verificando disponibilidad de recurso:', { fecha, tramoHorario, idRecurso, idReservaActual });
+    let params: any = { fecha, tramoHorario, idRecurso: idRecurso.toString() };
+    if (idReservaActual) {
+      params.idReservaActual = idReservaActual.toString();
+    }
+    return this.http.get<any>(`${this.apiUrl}/reservaRecurso/verificar-disponibilidad`, { params });
   }
 
   // ============================================

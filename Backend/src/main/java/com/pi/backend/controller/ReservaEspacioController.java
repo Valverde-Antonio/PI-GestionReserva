@@ -20,7 +20,6 @@ public class ReservaEspacioController {
     @Autowired
     private ReservaEspacioService reservaEspacioService;
 
-    // 🔥 MÉTODO CORREGIDO - Ahora incluye idProfesor
     @GetMapping
     public ResponseEntity<?> obtenerReservas() {
         try {
@@ -28,7 +27,6 @@ public class ReservaEspacioController {
             List<ReservaEspacioResponseDTO> dtoList = reservas.stream()
                     .map(reserva -> {
                         ReservaEspacioResponseDTO dto = new ReservaEspacioResponseDTO(reserva);
-                        // 🔥 Asegurarse de que idProfesor se incluya
                         if (reserva.getProfesor() != null) {
                             dto.setIdProfesor(reserva.getProfesor().getIdProfesor().longValue());
                         }
@@ -98,5 +96,25 @@ public class ReservaEspacioController {
     @GetMapping("/turnos")
     public List<String> obtenerTurnos() {
         return reservaEspacioService.obtenerTurnosDisponibles();
+    }
+
+    // 🔥 NUEVO: Endpoint para verificar disponibilidad
+    @GetMapping("/verificar-disponibilidad")
+    public ResponseEntity<Map<String, Object>> verificarDisponibilidad(
+            @RequestParam String fecha,
+            @RequestParam String tramoHorario,
+            @RequestParam Long idEspacio,
+            @RequestParam(required = false) Long idReservaActual) {
+        try {
+            System.out.println("🔍 Petición de verificación de disponibilidad recibida");
+            Map<String, Object> resultado = reservaEspacioService.verificarDisponibilidad(
+                fecha, tramoHorario, idEspacio, idReservaActual
+            );
+            return ResponseEntity.ok(resultado);
+        } catch (Exception e) {
+            System.err.println("❌ Error al verificar disponibilidad: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", e.getMessage()));
+        }
     }
 }

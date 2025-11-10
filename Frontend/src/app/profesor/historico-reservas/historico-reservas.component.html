@@ -57,8 +57,6 @@
             </select>
           </div>
 
-          <!-- SIN SELECT DE PROFESOR - Se eliminó porque solo ve sus reservas -->
-
           <!-- Botones -->
           <div class="col-md-12 d-flex gap-2">
             <button class="btn btn-secondary" (click)="limpiarFiltros()">
@@ -88,9 +86,9 @@
     <div *ngIf="reservasPaginadas.length > 0; else noResultados">
       <div class="card mb-3" *ngFor="let r of reservasPaginadas"
            [ngClass]="{
-             'border-warning': r.estado === 'Pendiente',
-             'border-info': r.estado === 'En curso',
-             'border-success': r.estado === 'Finalizada',
+             'border-warning': r.estado === 'Pendiente' && esMiReserva(r),
+             'border-info': r.estado === 'En curso' && esMiReserva(r),
+             'border-success': r.estado === 'Finalizada' && esMiReserva(r),
              'border-secondary': !esMiReserva(r)
            }">
         <div class="card-body">
@@ -107,32 +105,38 @@
                       }">
                   {{ r.estado }}
                 </span>
-                <!-- Badge para indicar si es reserva propia o de otro profesor -->
+                <!-- Badge si NO es tu reserva -->
                 <span class="badge bg-secondary ms-2" *ngIf="!esMiReserva(r)">
-                  <i class="bi bi-lock"></i> Solo lectura
+                  <i class="bi bi-eye"></i> Solo visualización
                 </span>
               </h5>
               <p class="card-text mb-0">
                 <i class="bi bi-calendar3"></i> <strong>Fecha:</strong> {{ r.fecha }}<br>
-                <i class="bi bi-clock"></i> <strong>Horario:</strong> {{ r.horaInicio }}<br>
+                <i class="bi bi-clock"></i> <strong>Horario:</strong> {{ r.tramoHorario }}<br>
                 <i class="bi bi-person-badge"></i> <strong>Profesor:</strong> {{ r.profesor }}<br>
                 <i class="bi bi-tag"></i> <strong>Tipo:</strong> {{ r.tipo }}
               </p>
             </div>
             <div class="col-md-4 text-end">
-              <div class="d-flex justify-content-end gap-2">
-                <!-- Botones solo habilitados si es MI reserva -->
-                <button class="btn btn-outline-primary btn-sm" 
-                        (click)="modificarReserva(r)"
-                        [disabled]="procesando || !esMiReserva(r)">
-                  <i class="bi bi-pencil"></i> Editar
-                </button>
-                <button class="btn btn-outline-danger btn-sm" 
-                        (click)="eliminarReserva(r)"
-                        [disabled]="procesando || !esMiReserva(r)">
-                  <i class="bi bi-trash"></i> Eliminar
-                </button>
-              </div>
+              <!-- 🔥 Solo mostrar botones si es MI reserva -->
+<div class="d-flex justify-content-end gap-2">
+  <ng-container *ngIf="esMiReserva(r); else soloVisualizacion">
+    <button class="btn btn-outline-primary btn-sm" 
+            (click)="modificarReserva(r)"
+            [disabled]="procesando || !puedeModificar(r)">
+      <i class="bi bi-pencil"></i> Editar
+    </button>
+    <button class="btn btn-outline-danger btn-sm" 
+            (click)="eliminarReserva(r)"
+            [disabled]="procesando || !puedeEliminar(r)">
+      <i class="bi bi-trash"></i> Cancelar
+    </button>
+  </ng-container>
+  <ng-template #soloVisualizacion>
+    <!-- Sin botones para reservas ajenas -->
+  </ng-template>
+</div>
+              <!-- Si NO es mi reserva, no mostrar botones -->
             </div>
           </div>
         </div>
@@ -170,19 +174,17 @@
   </div>
 </div>
 
-<!-- Modal Editar -->
+<!-- 🔥 MODAL EDITAR -->
 <div class="custom-backdrop" *ngIf="mostrarModalActualizar">
   <div class="custom-modal-box">
     <div class="modal-header bg-success text-white d-flex justify-content-between align-items-center">
       <h5 class="modal-title"><i class="bi bi-pencil-square"></i> Editar Reserva</h5>
-      <button type="button" class="btn-close btn-close-white" (click)="cerrarModal()"></button>
+      <button type="button" class="btn-close btn-close-white" (click)="cerrarModal()" [disabled]="procesando"></button>
     </div>
     <div class="modal-body mt-3">
       <div class="alert alert-info">
         <i class="bi bi-info-circle"></i> Editando reserva de <strong>{{ reservaSeleccionada?.tipo }}</strong>
       </div>
-
-      <!-- SIN SELECT DE PROFESOR -->
       
       <!-- Mostrar campo Espacio solo si es tipo Aula -->
       <div class="mb-3" *ngIf="reservaSeleccionada?.tipo === 'Aula'">
@@ -212,7 +214,7 @@
       <!-- Select de Tramo Horario -->
       <div class="mb-3">
         <label class="form-label"><i class="bi bi-clock"></i> Tramo Horario:</label>
-        <select class="form-select" [(ngModel)]="reservaSeleccionada.horaInicio">
+        <select class="form-select" [(ngModel)]="reservaSeleccionada.tramoHorario">
           <option value="">Selecciona un tramo horario</option>
           <option *ngFor="let tramo of tramosHorarios" [value]="tramo">
             {{ tramo }}
@@ -232,23 +234,100 @@
   </div>
 </div>
 
-<!-- Modal Eliminar -->
+<!-- 🔥 MODAL ELIMINAR/CANCELAR -->
 <div class="custom-backdrop" *ngIf="mostrarModalEliminar">
   <div class="custom-modal-box text-center">
     <div class="modal-header bg-danger text-white">
-      <h5 class="modal-title w-100"><i class="bi bi-exclamation-triangle"></i> Confirmar Eliminación</h5>
+      <h5 class="modal-title w-100"><i class="bi bi-exclamation-triangle"></i> Confirmar Cancelación</h5>
     </div>
     <div class="modal-body">
-      <p class="fs-5">¿Estás seguro de que deseas eliminar esta reserva?</p>
+      <p class="fs-5">¿Estás seguro de que deseas cancelar esta reserva?</p>
       <p class="text-muted">Esta acción no se puede deshacer.</p>
     </div>
     <div class="modal-footer justify-content-center">
       <button class="btn btn-danger me-3" (click)="confirmarEliminacion()" [disabled]="procesando">
         <span *ngIf="procesando" class="spinner-border spinner-border-sm me-2"></span>
-        <i *ngIf="!procesando" class="bi bi-check-circle-fill"></i> Sí, eliminar
+        <i *ngIf="!procesando" class="bi bi-check-circle-fill"></i> Sí, cancelar
       </button>
       <button class="btn btn-secondary" (click)="cancelarEliminacion()" [disabled]="procesando">
-        <i class="bi bi-x-circle-fill"></i> Cancelar
+        <i class="bi bi-x-circle-fill"></i> No, volver
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- 🔥 MODAL DE CONFLICTO (Espacio/Recurso ocupado) -->
+<div class="custom-backdrop" *ngIf="mostrarModalConflicto">
+  <div class="custom-modal-box">
+    <div class="modal-header bg-warning text-dark d-flex justify-content-between align-items-center">
+      <h5 class="modal-title"><i class="bi bi-exclamation-triangle-fill"></i> Espacio No Disponible</h5>
+      <button type="button" class="btn-close" (click)="cerrarModalConflicto()"></button>
+    </div>
+    <div class="modal-body">
+      <div class="alert alert-warning mb-3">
+        <h6 class="alert-heading">⚠️ Esta reserva ya está ocupada</h6>
+        <hr>
+        <p class="mb-2">
+          <strong>{{ conflictoInfo?.nombreEspacio || conflictoInfo?.nombreRecurso }}</strong> 
+          ya está reservado para:
+        </p>
+        <ul class="mb-0">
+          <li><strong>Fecha:</strong> {{ conflictoInfo?.fecha }}</li>
+          <li><strong>Horario:</strong> {{ conflictoInfo?.tramo }}</li>
+          <li><strong>Reservado por:</strong> {{ conflictoInfo?.reservadoPor }}</li>
+        </ul>
+      </div>
+      
+      <p class="text-muted">
+        <i class="bi bi-info-circle"></i> 
+        Como profesor, no puedes cancelar reservas de otros profesores. 
+        Puedes mantener tu reserva actual o elegir otra fecha/horario.
+      </p>
+    </div>
+    <div class="modal-footer justify-content-center">
+      <button class="btn btn-primary" (click)="mantenerReservaActual()">
+        <i class="bi bi-arrow-left-circle"></i> Mantener mi reserva actual
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- 🔥 MODAL INFORMATIVO (Success/Error/Warning/Info) -->
+<div class="custom-backdrop" *ngIf="mostrarModalInformativo">
+  <div class="custom-modal-box text-center">
+    <div class="modal-header" 
+         [ngClass]="{
+           'bg-success text-white': tipoMensaje === 'success',
+           'bg-danger text-white': tipoMensaje === 'error',
+           'bg-warning text-dark': tipoMensaje === 'warning',
+           'bg-info text-white': tipoMensaje === 'info'
+         }">
+      <h5 class="modal-title w-100">
+        <i class="bi" 
+           [ngClass]="{
+             'bi-check-circle-fill': tipoMensaje === 'success',
+             'bi-x-circle-fill': tipoMensaje === 'error',
+             'bi-exclamation-triangle-fill': tipoMensaje === 'warning',
+             'bi-info-circle-fill': tipoMensaje === 'info'
+           }"></i>
+        {{ tipoMensaje === 'success' ? 'Éxito' : 
+           tipoMensaje === 'error' ? 'Error' :
+           tipoMensaje === 'warning' ? 'Advertencia' : 'Información' }}
+      </h5>
+    </div>
+    <div class="modal-body">
+      <p class="fs-5 mb-0">{{ mensajeInformativo }}</p>
+    </div>
+    <div class="modal-footer justify-content-center">
+      <button class="btn" 
+              [ngClass]="{
+                'btn-success': tipoMensaje === 'success',
+                'btn-danger': tipoMensaje === 'error',
+                'btn-warning': tipoMensaje === 'warning',
+                'btn-info': tipoMensaje === 'info'
+              }"
+              (click)="cerrarModalInformativo()">
+        <i class="bi bi-check-lg"></i> Cerrar
       </button>
     </div>
   </div>

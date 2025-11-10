@@ -13,7 +13,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.dao.DataIntegrityViolationException;
 
 import java.time.LocalDate;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -40,7 +42,6 @@ public class ReservaRecursoService {
             System.out.println("  - ID Recurso: " + dto.getIdRecurso());
             System.out.println("  - ID Profesor: " + dto.getIdProfesor());
 
-            // Validar que los IDs no sean null
             if (dto.getIdRecurso() == null) {
                 throw new IllegalArgumentException("El ID del recurso no puede ser null");
             }
@@ -48,7 +49,6 @@ public class ReservaRecursoService {
                 throw new IllegalArgumentException("El ID del profesor no puede ser null");
             }
 
-            // Buscar recurso
             Recurso recurso = recursoRepository.findById(dto.getIdRecurso())
                     .orElseThrow(() -> {
                         System.err.println("❌ Recurso no encontrado con ID: " + dto.getIdRecurso());
@@ -56,7 +56,6 @@ public class ReservaRecursoService {
                     });
             System.out.println("✅ Recurso encontrado: " + recurso.getNombre());
 
-            // Buscar profesor
             Profesor profesor = profesorRepository.findById(dto.getIdProfesor())
                     .orElseThrow(() -> {
                         System.err.println("❌ Profesor no encontrado con ID: " + dto.getIdProfesor());
@@ -64,7 +63,6 @@ public class ReservaRecursoService {
                     });
             System.out.println("✅ Profesor encontrado: " + profesor.getNombre());
 
-            // Validar fecha
             LocalDate fecha;
             try {
                 fecha = LocalDate.parse(dto.getFecha());
@@ -74,7 +72,6 @@ public class ReservaRecursoService {
                 throw new IllegalArgumentException("Formato de fecha inválido: " + dto.getFecha());
             }
 
-            // ⭐ VALIDACIÓN CORREGIDA: Validar por ID en lugar de nombre
             boolean existeReserva = reservaRecursoRepository
                     .existsByFechaAndTramoHorarioAndRecurso_IdRecurso(
                         fecha, 
@@ -90,7 +87,6 @@ public class ReservaRecursoService {
                 throw new RuntimeException(mensaje);
             }
 
-            // Crear la reserva
             ReservaRecurso reserva = new ReservaRecurso();
             reserva.setFecha(fecha);
             reserva.setTramoHorario(dto.getTramoHorario());
@@ -161,5 +157,53 @@ public class ReservaRecursoService {
         ReservaRecurso reserva = reservaRecursoRepository.findById(id)
                 .orElseThrow(() -> new Exception("Reserva no encontrada"));
         reservaRecursoRepository.delete(reserva);
+    }
+
+    // 🔥 NUEVO: Verificar disponibilidad de recurso
+    public Map<String, Object> verificarDisponibilidad(String fecha, String tramoHorario, Long idRecurso, Long idReservaActual) {
+        Map<String, Object> resultado = new HashMap<>();
+        
+        try {
+            LocalDate fechaParseada = LocalDate.parse(fecha);
+            
+            System.out.println("🔍 Verificando disponibilidad de recurso:");
+            System.out.println("  - Fecha: " + fecha);
+            System.out.println("  - Tramo: " + tramoHorario);
+            System.out.println("  - ID Recurso: " + idRecurso);
+            System.out.println("  - ID Reserva actual: " + idReservaActual);
+            
+            // Buscar reservas que coincidan con fecha, tramo y recurso
+            List<ReservaRecurso> reservasExistentes = reservaRecursoRepository.findAll().stream()
+                .filter(r -> r.getFecha().equals(fechaParseada) 
+                          && r.getTramoHorario().equals(tramoHorario)
+                          && r.getRecurso().getIdRecurso().equals(idRecurso.intValue()))
+                .collect(Collectors.toList());
+            
+            // Si hay una reserva actual (estamos editando), excluirla
+            if (idReservaActual != null) {
+                reservasExistentes = reservasExistentes.stream()
+                    .filter(r -> !r.getIdReserva().equals(idReservaActual.intValue()))
+                    .collect(Collectors.toList());
+            }
+            
+            if (reservasExistentes.isEmpty()) {
+                System.out.println("✅ Recurso disponible");
+                resultado.put("disponible", true);
+            } else {
+                ReservaRecurso reservaConflicto = reservasExistentes.get(0);
+                System.out.println("❌ Recurso NO disponible - Reservado por: " + reservaConflicto.getProfesor().getNombre());
+                
+                resultado.put("disponible", false);
+                resultado.put("reservadoPor", reservaConflicto.getProfesor().getNombre());
+                resultado.put("idReserva", reservaConflicto.getIdReserva());
+                resultado.put("idProfesor", reservaConflicto.getProfesor().getIdProfesor());
+            }
+            
+        } catch (Exception e) {
+            System.err.println("❌ Error al verificar disponibilidad: " + e.getMessage());
+            resultado.put("error", e.getMessage());
+        }
+        
+        return resultado;
     }
 }

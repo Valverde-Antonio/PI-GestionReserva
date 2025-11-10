@@ -21,6 +21,7 @@ import { filter } from 'rxjs/operators';
 export class AppComponent implements OnInit {
   title = 'GestionReservas';
   rol: string = '';
+  mostrarHeader: boolean = false; // 🔥 NUEVO: Control del header
 
   constructor(
     public authService: AuthService,
@@ -30,23 +31,44 @@ export class AppComponent implements OnInit {
   ngOnInit(): void {
     console.log('🚀 AppComponent inicializado');
     
-    // 🔥 SOLUCIÓN 1: Leer el rol inicial del localStorage
-    this.rol = localStorage.getItem('rol') || '';
-    console.log('📋 Rol inicial desde localStorage:', this.rol);
-
-    // 🔥 SOLUCIÓN 2: Suscribirse a cambios del rol
+    // 🔥 Verificar estado inicial
+    this.verificarEstado();
+    
+    // 🔥 Suscribirse a cambios del rol
     this.authService.rol$.subscribe(rol => {
       this.rol = rol;
       console.log('🎭 App Component - Rol actualizado vía observable:', this.rol);
+      this.verificarEstado();
     });
-
-    // 🔥 SOLUCIÓN 3: Actualizar el rol en cada cambio de ruta
+    
+    // 🔥 Actualizar en cada cambio de ruta
     this.router.events.pipe(
       filter(event => event instanceof NavigationEnd)
-    ).subscribe(() => {
-      // Volver a leer el rol después de cada navegación
-      this.rol = localStorage.getItem('rol') || '';
-      console.log('🔄 Navegación detectada - Rol actual:', this.rol);
+    ).subscribe((event: NavigationEnd) => {
+      console.log('🔄 Navegación detectada - URL:', event.url);
+      this.verificarEstado();
+    });
+  }
+
+  // 🔥 NUEVO MÉTODO: Verificar si debe mostrar el header
+  verificarEstado(): void {
+    const rutaActual = this.router.url;
+    this.rol = localStorage.getItem('rol') || '';
+    
+    // 🔥 Mostrar header SOLO si:
+    // 1. NO es la ruta de login
+    // 2. Tiene un rol válido (directivo o profesor)
+    const esRutaLogin = rutaActual.includes('/login') || rutaActual === '/';
+    const tieneRolValido = this.rol === 'directivo' || this.rol === 'profesor';
+    
+    this.mostrarHeader = !esRutaLogin && tieneRolValido;
+    
+    console.log('📊 Estado actual:', {
+      ruta: rutaActual,
+      rol: this.rol,
+      esLogin: esRutaLogin,
+      tieneRol: tieneRolValido,
+      mostrarHeader: this.mostrarHeader
     });
   }
 
@@ -58,9 +80,8 @@ export class AppComponent implements OnInit {
     return this.rol === 'profesor';
   }
 
+  // 🔥 MODIFICADO: Ya no se usa, pero lo mantengo por compatibilidad
   get mostrarHeaders(): boolean {
-    const mostrar = !!this.rol && (this.esDirectivo || this.esProfesor);
-    console.log('👁️ ¿Mostrar headers?', mostrar, '- Rol:', this.rol);
-    return mostrar;
+    return this.mostrarHeader;
   }
 }

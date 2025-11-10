@@ -3,7 +3,6 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { HeaderComponent } from '../../header/header.component';
 import { ReservaService } from '../../services/reserva.service';
 import { RecursoService } from '../../services/recurso.service';
 import { EspacioService } from '../../services/espacio.service';
@@ -13,7 +12,7 @@ import { AuthService } from '../../services/auth.service';
 @Component({
   selector: 'app-historico-reservas',
   standalone: true,
-  imports: [CommonModule, FormsModule, HeaderComponent],
+  imports: [CommonModule, FormsModule],
   templateUrl: './historico-reservas.component.html',
   styleUrls: ['./historico-reservas.component.css']
 })
@@ -50,11 +49,19 @@ export class HistoricoReservasComponent implements OnInit {
   currentPage: number = 1;
   pageSize: number = 5;
 
+  // Modales
   mostrarModalActualizar: boolean = false;
   reservaSeleccionada: any = null;
 
   mostrarModalEliminar: boolean = false;
   reservaAEliminar: any = null;
+
+  mostrarModalConflicto: boolean = false;
+  conflictoInfo: any = null;
+
+  mostrarModalInformativo: boolean = false;
+  mensajeInformativo: string = '';
+  tipoMensaje: 'success' | 'error' | 'warning' | 'info' = 'info';
 
   // Loading states
   cargando: boolean = false;
@@ -115,11 +122,10 @@ export class HistoricoReservasComponent implements OnInit {
     });
   }
 
-  // 🔥 MODIFICADO: Ahora carga TODAS las reservas, no solo las del profesor actual
   cargarReservas(): void {
     this.reservaService.getHistorialCompleto().subscribe({
       next: ([reservasEspacios, reservasRecursos]: [any[], any[]]) => {
-        // Procesar TODAS las reservas de espacios (sin filtrar por profesor)
+        // Procesar TODAS las reservas de espacios
         const todasReservasEspacios = (reservasEspacios || [])
           .map((r: any) => ({
             id: r.idReserva,
@@ -132,10 +138,10 @@ export class HistoricoReservasComponent implements OnInit {
             estado: this.calcularEstado(r.fecha),
             profesor: r.nombreProfesor,
             idEspacio: r.idEspacio,
-            idProfesor: r.idProfesor  // 🔥 Importante: guardar el idProfesor
+            idProfesor: r.idProfesor
           }));
 
-        // Procesar TODAS las reservas de recursos (sin filtrar por profesor)
+        // Procesar TODAS las reservas de recursos
         const todasReservasRecursos = (reservasRecursos || [])
           .map((r: any) => ({
             id: r.idReserva,
@@ -148,7 +154,7 @@ export class HistoricoReservasComponent implements OnInit {
             estado: this.calcularEstado(r.fecha),
             profesor: r.nombreProfesor,
             idRecurso: r.idRecurso,
-            idProfesor: r.idProfesor  // 🔥 Importante: guardar el idProfesor
+            idProfesor: r.idProfesor
           }));
 
         this.historial = [...todasReservasEspacios, ...todasReservasRecursos].sort((a, b) => {
@@ -169,7 +175,6 @@ export class HistoricoReservasComponent implements OnInit {
     });
   }
 
-  // 🔥 NUEVO: Método para identificar si una reserva es del profesor actual
   esMiReserva(reserva: any): boolean {
     return Number(reserva.idProfesor) === this.idProfesorActual;
   }
@@ -234,15 +239,14 @@ export class HistoricoReservasComponent implements OnInit {
     }
   }
 
-  // 🔥 MODIFICADO: Solo permite editar si es MI reserva
   modificarReserva(reserva: any): void {
     if (!this.esMiReserva(reserva)) {
-      alert('No puedes modificar reservas de otros profesores');
+      this.mostrarMensajeInformativo('No puedes modificar reservas de otros profesores', 'warning');
       return;
     }
 
     if (reserva.estado === 'Finalizada') {
-      alert('No se pueden modificar reservas finalizadas');
+      this.mostrarMensajeInformativo('No se pueden modificar reservas finalizadas', 'warning');
       return;
     }
 
@@ -256,6 +260,7 @@ export class HistoricoReservasComponent implements OnInit {
     this.reservaSeleccionada = null;
   }
 
+  // 🔥 NUEVA LÓGICA: Verificar disponibilidad antes de guardar
   guardarCambios(): void {
     if (!this.reservaSeleccionada || this.procesando) return;
 
@@ -265,13 +270,89 @@ export class HistoricoReservasComponent implements OnInit {
     hoy.setHours(0, 0, 0, 0);
 
     if (fechaReserva < hoy) {
-      alert('No se puede modificar una reserva con fecha pasada');
+      this.mostrarMensajeInformativo('No se puede modificar una reserva con fecha pasada', 'error');
       return;
     }
 
-    console.log('💾 Guardando cambios de reserva:', this.reservaSeleccionada);
+    console.log('🔍 Verificando disponibilidad antes de guardar...');
     this.procesando = true;
 
+    if (this.reservaSeleccionada.tipo === 'Aula') {
+      const espacioSeleccionado = this.espacios.find(e => e.nombre === this.reservaSeleccionada.espacio);
+      const idEspacio = espacioSeleccionado ? espacioSeleccionado.idEspacio : this.reservaSeleccionada.idEspacio;
+
+      // 🔥 Verificar disponibilidad
+      this.reservaService.verificarDisponibilidadEspacio(
+        this.reservaSeleccionada.fecha,
+        this.reservaSeleccionada.tramoHorario,
+        idEspacio,
+        this.reservaSeleccionada.id
+      ).subscribe({
+        next: (resultado) => {
+          console.log('📊 Resultado verificación:', resultado);
+          
+          if (resultado.disponible) {
+            // ✅ Está disponible, proceder a guardar
+            this.procederAGuardarReserva();
+          } else {
+            // ❌ NO está disponible, mostrar modal de conflicto
+            this.procesando = false;
+            this.conflictoInfo = {
+              nombreEspacio: this.reservaSeleccionada.espacio,
+              reservadoPor: resultado.reservadoPor,
+              fecha: this.reservaSeleccionada.fecha,
+              tramo: this.reservaSeleccionada.tramoHorario
+            };
+            this.mostrarModalConflicto = true;
+          }
+        },
+        error: (error) => {
+          console.error('❌ Error al verificar disponibilidad:', error);
+          this.mostrarMensajeInformativo('Error al verificar disponibilidad', 'error');
+          this.procesando = false;
+        }
+      });
+    } else {
+      // Material
+      const recursoSeleccionado = this.recursos.find(r => r.nombre === this.reservaSeleccionada.recurso);
+      const idRecurso = recursoSeleccionado ? recursoSeleccionado.idRecurso : this.reservaSeleccionada.idRecurso;
+
+      // 🔥 Verificar disponibilidad
+      this.reservaService.verificarDisponibilidadRecurso(
+        this.reservaSeleccionada.fecha,
+        this.reservaSeleccionada.tramoHorario,
+        idRecurso,
+        this.reservaSeleccionada.id
+      ).subscribe({
+        next: (resultado) => {
+          console.log('📊 Resultado verificación:', resultado);
+          
+          if (resultado.disponible) {
+            // ✅ Está disponible, proceder a guardar
+            this.procederAGuardarReserva();
+          } else {
+            // ❌ NO está disponible, mostrar modal de conflicto
+            this.procesando = false;
+            this.conflictoInfo = {
+              nombreRecurso: this.reservaSeleccionada.recurso,
+              reservadoPor: resultado.reservadoPor,
+              fecha: this.reservaSeleccionada.fecha,
+              tramo: this.reservaSeleccionada.tramoHorario
+            };
+            this.mostrarModalConflicto = true;
+          }
+        },
+        error: (error) => {
+          console.error('❌ Error al verificar disponibilidad:', error);
+          this.mostrarMensajeInformativo('Error al verificar disponibilidad', 'error');
+          this.procesando = false;
+        }
+      });
+    }
+  }
+
+  // 🔥 NUEVO: Método para proceder con el guardado después de verificar
+  procederAGuardarReserva(): void {
     const dto: any = {
       fecha: this.reservaSeleccionada.fecha,
       tramoHorario: this.reservaSeleccionada.tramoHorario,
@@ -283,16 +364,30 @@ export class HistoricoReservasComponent implements OnInit {
       dto.idEspacio = espacioSeleccionado ? espacioSeleccionado.idEspacio : this.reservaSeleccionada.idEspacio;
 
       this.reservaService.actualizarReservaEspacio(this.reservaSeleccionada.id, dto).subscribe({
-        next: () => {
-          console.log('✅ Reserva de aula actualizada');
-          alert('Reserva actualizada correctamente');
-          this.procesando = false;
-          this.cerrarModal();
-          this.cargarReservas();
-        },
+  next: () => {
+    console.log('✅ Reserva de aula actualizada');
+    
+    // 🔥 Actualizar la reserva inmediatamente en el array local
+    const index = this.historial.findIndex(r => r.id === this.reservaSeleccionada.id);
+    if (index !== -1) {
+      this.historial[index].fecha = this.reservaSeleccionada.fecha;
+      this.historial[index].tramoHorario = this.reservaSeleccionada.tramoHorario;
+      this.historial[index].horaInicio = this.extraerHoraInicio(this.reservaSeleccionada.tramoHorario);
+      this.historial[index].espacio = this.reservaSeleccionada.espacio;
+      this.historial[index].estado = this.calcularEstado(this.reservaSeleccionada.fecha);
+    }
+    
+    this.filtrarReservas(); // Actualizar vista
+    this.mostrarMensajeInformativo('Reserva actualizada correctamente', 'success');
+    this.procesando = false;
+    this.cerrarModal();
+    
+    // Recargar después para sincronizar con backend
+    setTimeout(() => this.cargarReservas(), 500);
+  },
         error: (error) => {
           console.error('❌ Error al actualizar:', error);
-          alert(error.error || 'Error al actualizar la reserva');
+          this.mostrarMensajeInformativo(error.error || 'Error al actualizar la reserva', 'error');
           this.procesando = false;
         }
       });
@@ -303,29 +398,42 @@ export class HistoricoReservasComponent implements OnInit {
       this.reservaService.actualizarReservaRecurso(this.reservaSeleccionada.id, dto).subscribe({
         next: () => {
           console.log('✅ Reserva de material actualizada');
-          alert('Reserva actualizada correctamente');
+          this.mostrarMensajeInformativo('Reserva actualizada correctamente', 'success');
           this.procesando = false;
           this.cerrarModal();
           this.cargarReservas();
         },
         error: (error) => {
           console.error('❌ Error al actualizar:', error);
-          alert(error.error || 'Error al actualizar la reserva');
+          this.mostrarMensajeInformativo(error.error || 'Error al actualizar la reserva', 'error');
           this.procesando = false;
         }
       });
     }
   }
 
-  // 🔥 MODIFICADO: Solo permite eliminar si es MI reserva
+  // 🔥 NUEVO: Métodos para manejar el modal de conflicto
+  mantenerReservaActual(): void {
+    console.log('✅ Usuario decidió mantener su reserva actual');
+    this.mostrarModalConflicto = false;
+    this.conflictoInfo = null;
+    this.cerrarModal();
+    this.mostrarMensajeInformativo('Se ha mantenido tu reserva original', 'info');
+  }
+
+  cerrarModalConflicto(): void {
+    this.mostrarModalConflicto = false;
+    this.conflictoInfo = null;
+  }
+
   eliminarReserva(reserva: any): void {
     if (!this.esMiReserva(reserva)) {
-      alert('No puedes eliminar reservas de otros profesores');
+      this.mostrarMensajeInformativo('No puedes eliminar reservas de otros profesores', 'warning');
       return;
     }
 
     if (reserva.estado === 'Finalizada') {
-      alert('No se pueden eliminar reservas finalizadas');
+      this.mostrarMensajeInformativo('No se pueden eliminar reservas finalizadas', 'warning');
       return;
     }
 
@@ -343,14 +451,14 @@ export class HistoricoReservasComponent implements OnInit {
       this.reservaService.eliminarReservaEspacio(this.reservaAEliminar.id).subscribe({
         next: () => {
           console.log('✅ Reserva de aula eliminada');
-          alert('Reserva eliminada correctamente');
+          this.mostrarMensajeInformativo('Reserva eliminada correctamente', 'success');
           this.procesando = false;
           this.cancelarEliminacion();
           this.cargarReservas();
         },
         error: (error) => {
           console.error('❌ Error al eliminar:', error);
-          alert('Error al eliminar la reserva');
+          this.mostrarMensajeInformativo('Error al eliminar la reserva', 'error');
           this.procesando = false;
         }
       });
@@ -358,14 +466,14 @@ export class HistoricoReservasComponent implements OnInit {
       this.reservaService.eliminarReservaRecurso(this.reservaAEliminar.id).subscribe({
         next: () => {
           console.log('✅ Reserva de material eliminada');
-          alert('Reserva eliminada correctamente');
+          this.mostrarMensajeInformativo('Reserva eliminada correctamente', 'success');
           this.procesando = false;
           this.cancelarEliminacion();
           this.cargarReservas();
         },
         error: (error) => {
           console.error('❌ Error al eliminar:', error);
-          alert('Error al eliminar la reserva');
+          this.mostrarMensajeInformativo('Error al eliminar la reserva', 'error');
           this.procesando = false;
         }
       });
@@ -375,6 +483,18 @@ export class HistoricoReservasComponent implements OnInit {
   cancelarEliminacion(): void {
     this.reservaAEliminar = null;
     this.mostrarModalEliminar = false;
+  }
+
+  // 🔥 NUEVO: Sistema de mensajes informativos
+  mostrarMensajeInformativo(mensaje: string, tipo: 'success' | 'error' | 'warning' | 'info'): void {
+    this.mensajeInformativo = mensaje;
+    this.tipoMensaje = tipo;
+    this.mostrarModalInformativo = true;
+  }
+
+  cerrarModalInformativo(): void {
+    this.mostrarModalInformativo = false;
+    this.mensajeInformativo = '';
   }
 
   exportarPDFTodasReservas(): void {
@@ -395,13 +515,14 @@ export class HistoricoReservasComponent implements OnInit {
     doc.text(`Fecha de generación: ${fechaGeneracion}`, doc.internal.pageSize.getWidth() / 2, 37, { align: 'center' });
 
     autoTable(doc, {
-      head: [['Tipo', 'Espacio/Material', 'Fecha', 'Hora', 'Estado']],
+      head: [['Tipo', 'Espacio/Material', 'Fecha', 'Hora', 'Estado', 'Profesor']],
       body: this.filtradoReservas.map(h => [
         h.tipo,
         h.espacio || h.recurso || '',
         h.fecha,
         h.tramoHorario,
-        h.estado
+        h.estado,
+        h.profesor
       ]),
       startY: 45,
       styles: { halign: 'center', valign: 'middle', fontSize: 10 },
@@ -414,16 +535,16 @@ export class HistoricoReservasComponent implements OnInit {
     doc.text('IES ALMUDEYNE', 14, pageHeight - 10);
     doc.text(`Total: ${this.filtradoReservas.length} reservas`, doc.internal.pageSize.getWidth() - 50, pageHeight - 10);
 
-    doc.save(`mis-reservas-${new Date().getTime()}.pdf`);
+    doc.save(`reservas-${new Date().getTime()}.pdf`);
     console.log('📄 PDF generado exitosamente');
   }
 
   puedeModificar(reserva: any): boolean {
-    return reserva.estado !== 'Finalizada';
+    return this.esMiReserva(reserva) && reserva.estado !== 'Finalizada';
   }
 
   puedeEliminar(reserva: any): boolean {
-    return reserva.estado !== 'Finalizada';
+    return this.esMiReserva(reserva) && reserva.estado !== 'Finalizada';
   }
 
   obtenerFechaHoy(): string {
