@@ -290,7 +290,7 @@ export class HistoricoReservasComponent implements OnInit {
       ).subscribe({
         next: (resultado) => {
           console.log('📊 Resultado verificación:', resultado);
-          
+
           if (resultado.disponible) {
             // ✅ Está disponible, proceder a guardar
             this.procederAGuardarReserva();
@@ -326,7 +326,7 @@ export class HistoricoReservasComponent implements OnInit {
       ).subscribe({
         next: (resultado) => {
           console.log('📊 Resultado verificación:', resultado);
-          
+
           if (resultado.disponible) {
             // ✅ Está disponible, proceder a guardar
             this.procederAGuardarReserva();
@@ -364,27 +364,27 @@ export class HistoricoReservasComponent implements OnInit {
       dto.idEspacio = espacioSeleccionado ? espacioSeleccionado.idEspacio : this.reservaSeleccionada.idEspacio;
 
       this.reservaService.actualizarReservaEspacio(this.reservaSeleccionada.id, dto).subscribe({
-  next: () => {
-    console.log('✅ Reserva de aula actualizada');
-    
-    // 🔥 Actualizar la reserva inmediatamente en el array local
-    const index = this.historial.findIndex(r => r.id === this.reservaSeleccionada.id);
-    if (index !== -1) {
-      this.historial[index].fecha = this.reservaSeleccionada.fecha;
-      this.historial[index].tramoHorario = this.reservaSeleccionada.tramoHorario;
-      this.historial[index].horaInicio = this.extraerHoraInicio(this.reservaSeleccionada.tramoHorario);
-      this.historial[index].espacio = this.reservaSeleccionada.espacio;
-      this.historial[index].estado = this.calcularEstado(this.reservaSeleccionada.fecha);
-    }
-    
-    this.filtrarReservas(); // Actualizar vista
-    this.mostrarMensajeInformativo('Reserva actualizada correctamente', 'success');
-    this.procesando = false;
-    this.cerrarModal();
-    
-    // Recargar después para sincronizar con backend
-    setTimeout(() => this.cargarReservas(), 500);
-  },
+        next: () => {
+          console.log('✅ Reserva de aula actualizada');
+
+          // 🔥 Actualizar la reserva inmediatamente en el array local
+          const index = this.historial.findIndex(r => r.id === this.reservaSeleccionada.id);
+          if (index !== -1) {
+            this.historial[index].fecha = this.reservaSeleccionada.fecha;
+            this.historial[index].tramoHorario = this.reservaSeleccionada.tramoHorario;
+            this.historial[index].horaInicio = this.extraerHoraInicio(this.reservaSeleccionada.tramoHorario);
+            this.historial[index].espacio = this.reservaSeleccionada.espacio;
+            this.historial[index].estado = this.calcularEstado(this.reservaSeleccionada.fecha);
+          }
+
+          this.filtrarReservas(); // Actualizar vista
+          this.mostrarMensajeInformativo('Reserva actualizada correctamente', 'success');
+          this.procesando = false;
+          this.cerrarModal();
+
+          // Recargar después para sincronizar con backend
+          setTimeout(() => this.cargarReservas(), 500);
+        },
         error: (error) => {
           console.error('❌ Error al actualizar:', error);
           this.mostrarMensajeInformativo(error.error || 'Error al actualizar la reserva', 'error');
@@ -503,40 +503,200 @@ export class HistoricoReservasComponent implements OnInit {
 
   exportarPDFMisReservas(): void {
     const doc = new jsPDF();
-    doc.setFontSize(18);
-    doc.setTextColor(0);
-    doc.text('Mis Reservas', doc.internal.pageSize.getWidth() / 2, 20, { align: 'center' });
 
-    doc.setFontSize(12);
-    doc.text(`Profesor: ${this.usuarioLogueado}`, doc.internal.pageSize.getWidth() / 2, 30, { align: 'center' });
+    const logo = new Image();
+    logo.src = 'assets/img/logoAlmudeyne.png';
+
+    logo.onload = () => {
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const pageHeight = doc.internal.pageSize.getHeight();
+
+      // 🔵 BORDE SUPERIOR AZUL
+      doc.setDrawColor(41, 128, 185); // Azul
+      doc.setLineWidth(1.5);
+      doc.line(10, 10, pageWidth - 10, 10);
+
+      // 🔵 Texto "FORMATO DE IMPRESIÓN" arriba del borde
+      doc.setFontSize(8);
+      doc.setTextColor(41, 128, 185);
+      doc.text('FORMATO DE IMPRESIÓN MIS RESERVAS', 15, 8);
+
+      // 🖼️ LOGO A LA IZQUIERDA
+      doc.addImage(logo, 'PNG', 20, 18, 35, 35);
+
+      // 📋 TÍTULO CENTRADO GRANDE
+      doc.setFontSize(18);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(0, 0, 0);
+      doc.text('MIS RESERVAS', pageWidth / 2, 35, { align: 'center' });
+
+      // 📐 LÍNEA HORIZONTAL DEBAJO DEL TÍTULO
+      doc.setDrawColor(200, 200, 200);
+      doc.setLineWidth(0.5);
+      doc.line(60, 42, pageWidth - 60, 42);
+
+      // 📝 INFORMACIÓN DEL LISTADO
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(0, 0, 0);
+      doc.text('LISTADO DE RESERVAS', 20, 58);
+
+      // Fecha desde y hasta (simulando rango de filtros)
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9);
+      const fechaDesde = this.filtroFecha || 'dd/MM/yyyy';
+      const fechaHasta = this.filtroFecha || 'dd/MM/yyyy';
+      doc.text(`Fecha desde: ${fechaDesde}`, 20, 65);
+      doc.text(`Fecha hasta: ${fechaHasta}`, 110, 65);
+
+      // Profesor
+      doc.text(`Profesor: ${this.usuarioLogueado}`, 20, 72);
+
+      // ✅ TABLA CON ESTILO VERDE OSCURO
+      autoTable(doc, {
+        head: [['Fecha', 'Tipo', 'Espacio/Material', 'Tramo Horario', 'Estado']],
+        body: this.filtradoReservas.map(r => [
+          r.fecha,
+          r.tipo,
+          r.tipo === 'Aula' ? r.espacio : r.recurso,
+          r.tramoHorario,
+          r.estado
+        ]),
+        startY: 80,
+        styles: {
+          halign: 'center',
+          valign: 'middle',
+          fontSize: 9,
+          cellPadding: 5,
+          lineColor: [200, 200, 200], // Líneas grises
+          lineWidth: 0.1
+        },
+        headStyles: {
+          fillColor: [25, 77, 67], // Verde oscuro como en tu imagen
+          textColor: [255, 255, 255],
+          fontStyle: 'bold',
+          fontSize: 10,
+          halign: 'center'
+        },
+        alternateRowStyles: {
+          fillColor: [245, 245, 245] // Gris claro alternado
+        },
+        margin: { left: 20, right: 20 },
+        tableLineColor: [200, 200, 200],
+        tableLineWidth: 0.1
+      });
+
+      // 📄 PIE DE PÁGINA
+      const finalY = (doc as any).lastAutoTable.finalY || 100;
+
+      doc.setFontSize(8);
+      doc.setTextColor(100, 100, 100);
+      doc.text(
+        `Total de reservas: ${this.filtradoReservas.length}`,
+        20,
+        pageHeight - 15
+      );
+
+      const fechaGeneracion = new Date().toLocaleDateString('es-ES', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+      });
+      doc.text(
+        `Fecha de generación: ${fechaGeneracion}`,
+        pageWidth / 2,
+        pageHeight - 15,
+        { align: 'center' }
+      );
+
+      doc.text(
+        'IES Almudeyne',
+        pageWidth - 20,
+        pageHeight - 15,
+        { align: 'right' }
+      );
+
+      // 💾 GUARDAR PDF
+      doc.save(`mis_reservas_${new Date().getTime()}.pdf`);
+      console.log('📄 PDF generado con estilo personalizado');
+    };
+
+    logo.onerror = () => {
+      console.warn('⚠️ Error al cargar el logo del instituto');
+      this.generarPDFSinLogo();
+    };
+  }
+
+  // 🔥 VERSIÓN SIN LOGO (por si falla la carga)
+  generarPDFSinLogo(): void {
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+
+    // Borde superior azul
+    doc.setDrawColor(41, 128, 185);
+    doc.setLineWidth(1.5);
+    doc.line(10, 10, pageWidth - 10, 10);
+
+    doc.setFontSize(8);
+    doc.setTextColor(41, 128, 185);
+    doc.text('FORMATO DE IMPRESIÓN MIS RESERVAS', 15, 8);
+
+    // Título
+    doc.setFontSize(18);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(0, 0, 0);
+    doc.text('MIS RESERVAS', pageWidth / 2, 25, { align: 'center' });
+
+    doc.setDrawColor(200, 200, 200);
+    doc.setLineWidth(0.5);
+    doc.line(60, 32, pageWidth - 60, 32);
+
+    // Información
+    doc.setFontSize(10);
+    doc.text('LISTADO DE RESERVAS', 20, 45);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.text(`Profesor: ${this.usuarioLogueado}`, 20, 52);
 
     const fechaGeneracion = new Date().toLocaleDateString('es-ES');
-    doc.setFontSize(10);
-    doc.text(`Fecha de generación: ${fechaGeneracion}`, doc.internal.pageSize.getWidth() / 2, 37, { align: 'center' });
+    doc.text(`Fecha: ${fechaGeneracion}`, 20, 59);
 
+    // Tabla
     autoTable(doc, {
-      head: [['Tipo', 'Espacio/Material', 'Fecha', 'Hora', 'Estado', 'Profesor']],
-      body: this.filtradoReservas.map(h => [
-        h.tipo,
-        h.espacio || h.recurso || '',
-        h.fecha,
-        h.tramoHorario,
-        h.estado,
-        h.profesor
+      head: [['Fecha', 'Tipo', 'Espacio/Material', 'Tramo Horario', 'Estado']],
+      body: this.filtradoReservas.map(r => [
+        r.fecha,
+        r.tipo,
+        r.tipo === 'Aula' ? r.espacio : r.recurso,
+        r.tramoHorario,
+        r.estado
       ]),
-      startY: 45,
-      styles: { halign: 'center', valign: 'middle', fontSize: 10 },
-      headStyles: { fillColor: [60, 126, 102], textColor: [255, 255, 255], fontStyle: 'bold' },
-      alternateRowStyles: { fillColor: [245, 245, 245] }
+      startY: 65,
+      styles: {
+        halign: 'center',
+        fontSize: 9,
+        cellPadding: 5,
+        lineColor: [200, 200, 200],
+        lineWidth: 0.1
+      },
+      headStyles: {
+        fillColor: [25, 77, 67],
+        textColor: [255, 255, 255],
+        fontStyle: 'bold'
+      },
+      alternateRowStyles: {
+        fillColor: [245, 245, 245]
+      },
+      margin: { left: 20, right: 20 }
     });
 
-    const pageHeight = doc.internal.pageSize.getHeight();
-    doc.setFontSize(10);
-    doc.text('IES ALMUDEYNE', 14, pageHeight - 10);
-    doc.text(`Total: ${this.filtradoReservas.length} reservas`, doc.internal.pageSize.getWidth() - 50, pageHeight - 10);
+    doc.setFontSize(8);
+    doc.setTextColor(100);
+    doc.text(`Total: ${this.filtradoReservas.length}`, pageWidth / 2, pageHeight - 10, { align: 'center' });
 
-    doc.save(`reservas-${new Date().getTime()}.pdf`);
-    console.log('📄 PDF generado exitosamente');
+    doc.save(`mis_reservas_${new Date().getTime()}.pdf`);
   }
 
   puedeModificar(reserva: any): boolean {
