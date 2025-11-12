@@ -21,8 +21,8 @@ export class HistoricoReservasComponent implements OnInit {
   filtradoReservas: any[] = [];
   reservas: any[] = [];
 
-  filtroFecha: string = '';
-  filtroMaterial: string = '';
+  filtroFechaDesde: string = '';
+  filtroFechaHasta: string = ''; filtroMaterial: string = '';
   filtroAula: string = '';
   filtroEstado: string = '';
   filtroTipo: string = 'Todas';
@@ -79,7 +79,8 @@ export class HistoricoReservasComponent implements OnInit {
     this.usuarioLogueado = this.authService.getNombreCompleto();
     this.idProfesorActual = this.authService.getIdProfesor();
 
-    this.filtroFecha = this.obtenerFechaHoy();
+    this.filtroFechaDesde = this.obtenerFechaHoy();
+    this.filtroFechaHasta = this.obtenerFechaHoy();
 
     console.log('👤 Usuario actual:', this.usuarioLogueado, 'ID:', this.idProfesorActual);
 
@@ -203,7 +204,23 @@ export class HistoricoReservasComponent implements OnInit {
 
   filtrarReservas(): void {
     this.filtradoReservas = this.historial.filter(h => {
-      const coincideFecha = this.filtroFecha ? h.fecha === this.filtroFecha : true;
+      // 🔥 Filtro por rango de fechas
+      let coincideFecha = true;
+      if (this.filtroFechaDesde && this.filtroFechaHasta) {
+        const fechaReserva = new Date(h.fecha + 'T00:00:00');
+        const fechaDesde = new Date(this.filtroFechaDesde + 'T00:00:00');
+        const fechaHasta = new Date(this.filtroFechaHasta + 'T00:00:00');
+        coincideFecha = fechaReserva >= fechaDesde && fechaReserva <= fechaHasta;
+      } else if (this.filtroFechaDesde) {
+        const fechaReserva = new Date(h.fecha + 'T00:00:00');
+        const fechaDesde = new Date(this.filtroFechaDesde + 'T00:00:00');
+        coincideFecha = fechaReserva >= fechaDesde;
+      } else if (this.filtroFechaHasta) {
+        const fechaReserva = new Date(h.fecha + 'T00:00:00');
+        const fechaHasta = new Date(this.filtroFechaHasta + 'T00:00:00');
+        coincideFecha = fechaReserva <= fechaHasta;
+      }
+
       const coincideMaterial = h.tipo === 'Material' ? (this.filtroMaterial ? h.recurso === this.filtroMaterial : true) : true;
       const coincideAula = h.tipo === 'Aula' ? (this.filtroAula ? h.espacio === this.filtroAula : true) : true;
       const coincideEstado = this.filtroEstado ? h.estado === this.filtroEstado : true;
@@ -216,7 +233,8 @@ export class HistoricoReservasComponent implements OnInit {
   }
 
   limpiarFiltros(): void {
-    this.filtroFecha = this.obtenerFechaHoy();
+    this.filtroFechaDesde = this.obtenerFechaHoy();
+    this.filtroFechaHasta = this.obtenerFechaHoy();
     this.filtroMaterial = '';
     this.filtroAula = '';
     this.filtroEstado = '';
@@ -512,7 +530,7 @@ export class HistoricoReservasComponent implements OnInit {
       const pageHeight = doc.internal.pageSize.getHeight();
 
       // 🔵 BORDE SUPERIOR AZUL
-      doc.setDrawColor(41, 128, 185); // Azul
+      doc.setDrawColor(41, 128, 185);
       doc.setLineWidth(1.5);
       doc.line(10, 10, pageWidth - 10, 10);
 
@@ -541,21 +559,35 @@ export class HistoricoReservasComponent implements OnInit {
       doc.setTextColor(0, 0, 0);
       doc.text('LISTADO DE RESERVAS', 20, 58);
 
-      // Fecha desde y hasta (simulando rango de filtros)
+      // Fecha desde y hasta
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(9);
-      const fechaDesde = this.filtroFecha || 'dd/MM/yyyy';
-      const fechaHasta = this.filtroFecha || 'dd/MM/yyyy';
+      const fechaDesde = this.filtroFechaDesde || 'dd/MM/yyyy';
+      const fechaHasta = this.filtroFechaHasta || 'dd/MM/yyyy';
       doc.text(`Fecha desde: ${fechaDesde}`, 20, 65);
       doc.text(`Fecha hasta: ${fechaHasta}`, 110, 65);
 
       // Profesor
       doc.text(`Profesor: ${this.usuarioLogueado}`, 20, 72);
 
+      // 🔥 ORDENAR reservas por fecha y luego por tramo horario
+      const reservasOrdenadas = [...this.filtradoReservas].sort((a, b) => {
+        // Primero ordenar por fecha
+        const fechaComparison = new Date(a.fecha).getTime() - new Date(b.fecha).getTime();
+        if (fechaComparison !== 0) {
+          return fechaComparison;
+        }
+
+        // Si las fechas son iguales, ordenar por hora de inicio del tramo
+        const horaA = this.extraerHoraInicioParaOrdenar(a.tramoHorario);
+        const horaB = this.extraerHoraInicioParaOrdenar(b.tramoHorario);
+        return horaA - horaB;
+      });
+
       // ✅ TABLA CON ESTILO VERDE OSCURO
       autoTable(doc, {
         head: [['Fecha', 'Tipo', 'Espacio/Material', 'Tramo Horario', 'Estado']],
-        body: this.filtradoReservas.map(r => [
+        body: reservasOrdenadas.map(r => [
           r.fecha,
           r.tipo,
           r.tipo === 'Aula' ? r.espacio : r.recurso,
@@ -568,18 +600,18 @@ export class HistoricoReservasComponent implements OnInit {
           valign: 'middle',
           fontSize: 9,
           cellPadding: 5,
-          lineColor: [200, 200, 200], // Líneas grises
+          lineColor: [200, 200, 200],
           lineWidth: 0.1
         },
         headStyles: {
-          fillColor: [25, 77, 67], // Verde oscuro como en tu imagen
+          fillColor: [25, 77, 67],
           textColor: [255, 255, 255],
           fontStyle: 'bold',
           fontSize: 10,
           halign: 'center'
         },
         alternateRowStyles: {
-          fillColor: [245, 245, 245] // Gris claro alternado
+          fillColor: [245, 245, 245]
         },
         margin: { left: 20, right: 20 },
         tableLineColor: [200, 200, 200],
@@ -618,13 +650,28 @@ export class HistoricoReservasComponent implements OnInit {
 
       // 💾 GUARDAR PDF
       doc.save(`mis_reservas_${new Date().getTime()}.pdf`);
-      console.log('📄 PDF generado con estilo personalizado');
+      console.log('📄 PDF generado con estilo personalizado y ordenado');
     };
 
     logo.onerror = () => {
       console.warn('⚠️ Error al cargar el logo del instituto');
       this.generarPDFSinLogo();
     };
+  }
+
+  // 🔥 NUEVO MÉTODO: Extraer hora en formato numérico para ordenar
+  extraerHoraInicioParaOrdenar(tramoHorario: string): number {
+    if (!tramoHorario) return 0;
+
+    // Extraer la hora de inicio (ej: "08:00-09:00" -> "08:00")
+    const horaInicio = tramoHorario.includes('-')
+      ? tramoHorario.split('-')[0].trim()
+      : tramoHorario;
+
+    // Convertir a minutos desde medianoche para facilitar comparación
+    // ej: "08:00" -> 8*60 + 0 = 480
+    const [horas, minutos] = horaInicio.split(':').map(Number);
+    return horas * 60 + minutos;
   }
 
   // 🔥 VERSIÓN SIN LOGO (por si falla la carga)
