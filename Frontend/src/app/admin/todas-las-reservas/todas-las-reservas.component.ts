@@ -19,7 +19,8 @@ export class TodasLasReservasComponent implements OnInit {
   reservas: any[] = [];
   filtradoReservas: any[] = [];
 
-  filtroFecha: string = '';
+  filtroFechaDesde: string = '';
+  filtroFechaHasta: string = '';
   filtroMaterial: string = '';
   filtroProfesor: string = '';
   filtroAula: string = '';
@@ -71,10 +72,12 @@ export class TodasLasReservasComponent implements OnInit {
 
   ngOnInit(): void {
     this.usuarioLogeado = localStorage.getItem('nombreCompleto') || '';
-    this.filtroFecha = this.obtenerFechaHoy();
+
+    this.filtroFechaDesde = this.obtenerFechaHoy();
+    this.filtroFechaHasta = this.obtenerFechaHoy();
 
     console.log('👤 Usuario logeado:', this.usuarioLogeado);
-    console.log('📅 Fecha inicial:', this.filtroFecha);
+    console.log('📅 Fecha inicial:', this.filtroFechaDesde);
 
     this.cargarDatos();
   }
@@ -189,29 +192,45 @@ export class TodasLasReservasComponent implements OnInit {
   }
 
   filtrarReservas(): void {
-    const { filtroFecha, filtroMaterial, filtroProfesor, filtroAula, filtroTipo } = this;
-    console.log('🔍 Aplicando filtros:', { filtroFecha, filtroMaterial, filtroProfesor, filtroAula, filtroTipo });
-
     this.filtradoReservas = this.reservas.filter(r => {
-      const coincideFecha = filtroFecha ? r.fecha === filtroFecha : true;
-      const coincideMaterial = (filtroMaterial && r.tipo === 'Material')
-        ? r.recurso === filtroMaterial
-        : true;
-      const coincideProfesor = filtroProfesor ? r.profesor === filtroProfesor : true;
-      const coincideAula = (filtroAula && r.tipo === 'Aula')
-        ? r.espacio === filtroAula
-        : true;
-      const coincideTipo = (filtroTipo === 'Todas') ? true : r.tipo === filtroTipo;
+      // 🔥 Filtro por rango de fechas
+      let coincideFecha = true;
+      if (this.filtroFechaDesde && this.filtroFechaHasta) {
+        const fechaReserva = new Date(r.fecha + 'T00:00:00');
+        const fechaDesde = new Date(this.filtroFechaDesde + 'T00:00:00');
+        const fechaHasta = new Date(this.filtroFechaHasta + 'T00:00:00');
+        coincideFecha = fechaReserva >= fechaDesde && fechaReserva <= fechaHasta;
+      } else if (this.filtroFechaDesde) {
+        const fechaReserva = new Date(r.fecha + 'T00:00:00');
+        const fechaDesde = new Date(this.filtroFechaDesde + 'T00:00:00');
+        coincideFecha = fechaReserva >= fechaDesde;
+      } else if (this.filtroFechaHasta) {
+        const fechaReserva = new Date(r.fecha + 'T00:00:00');
+        const fechaHasta = new Date(this.filtroFechaHasta + 'T00:00:00');
+        coincideFecha = fechaReserva <= fechaHasta;
+      }
 
-      return coincideFecha && coincideMaterial && coincideProfesor && coincideAula && coincideTipo;
+      const coincideMaterial = (r.tipo === 'Material' && this.filtroMaterial)
+        ? r.recurso === this.filtroMaterial
+        : true;
+
+      const coincideAula = (r.tipo === 'Aula' && this.filtroAula)
+        ? r.espacio === this.filtroAula
+        : true;
+
+      const coincideProfesor = this.filtroProfesor ? r.profesor === this.filtroProfesor : true;
+      const coincideTipo = (this.filtroTipo === 'Todas') ? true : r.tipo === this.filtroTipo;
+
+      return coincideFecha && coincideMaterial && coincideAula && coincideProfesor && coincideTipo;
     });
 
-    console.log('✅ Resultados tras filtrar:', this.filtradoReservas.length, 'reservas');
     this.currentPage = 1;
+    console.log('🔍 Reservas filtradas:', this.filtradoReservas.length);
   }
 
   limpiarFiltros(): void {
-    this.filtroFecha = this.obtenerFechaHoy();
+    this.filtroFechaDesde = this.obtenerFechaHoy();
+    this.filtroFechaHasta = this.obtenerFechaHoy();
     this.filtroMaterial = '';
     this.filtroAula = '';
     this.filtroTipo = 'Todas';
@@ -227,87 +246,126 @@ export class TodasLasReservasComponent implements OnInit {
 
     logo.onload = () => {
       const pageWidth = doc.internal.pageSize.getWidth();
+      const pageHeight = doc.internal.pageSize.getHeight();
 
-      doc.addImage(logo, 'PNG', 15, 10, 30, 30);
+      // 🔵 BORDE SUPERIOR AZUL
+      doc.setDrawColor(41, 128, 185);
+      doc.setLineWidth(1.5);
+      doc.line(10, 10, pageWidth - 10, 10);
 
+      // 🔵 Texto "FORMATO DE IMPRESIÓN" arriba del borde
+      doc.setFontSize(8);
+      doc.setTextColor(41, 128, 185);
+      doc.text('FORMATO DE IMPRESIÓN TODAS LAS RESERVAS', 15, 8);
+
+      // 🖼️ LOGO A LA IZQUIERDA
+      doc.addImage(logo, 'PNG', 20, 18, 35, 35);
+
+      // 📋 TÍTULO CENTRADO GRANDE
       doc.setFontSize(18);
       doc.setFont('helvetica', 'bold');
-      doc.text('Instituto de Educación Secundaria', pageWidth / 2, 52, { align: 'center' });
+      doc.setTextColor(0, 0, 0);
+      doc.text('TODAS LAS RESERVAS', pageWidth / 2, 35, { align: 'center' });
 
-      doc.setFontSize(16);
-      doc.text('ALMUDEYNE', pageWidth / 2, 60, { align: 'center' });
-
-      doc.setFontSize(14);
-      doc.setFont('helvetica', 'normal');
-      doc.text('Historial de Reservas', pageWidth / 2, 68, { align: 'center' });
-
+      // 📐 LÍNEA HORIZONTAL DEBAJO DEL TÍTULO
+      doc.setDrawColor(200, 200, 200);
       doc.setLineWidth(0.5);
-      doc.setDrawColor(60, 126, 102);
-      doc.line(50, 73, pageWidth - 50, 73);
+      doc.line(60, 42, pageWidth - 60, 42);
 
+      // 📝 INFORMACIÓN DEL LISTADO
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(0, 0, 0);
+      doc.text('LISTADO DE RESERVAS', 20, 58);
+
+      // Fecha desde y hasta
+      doc.setFont('helvetica', 'normal');
       doc.setFontSize(9);
-      doc.setTextColor(100);
-      const fechaGeneracion = new Date().toLocaleDateString('es-ES', {
-        weekday: 'long',
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-      });
-      doc.text(`Fecha de generación: ${fechaGeneracion}`, pageWidth / 2, 80, { align: 'center' });
-      doc.text(`Total de reservas: ${this.filtradoReservas.length}`, pageWidth / 2, 86, { align: 'center' });
+      const fechaDesde = this.filtroFechaDesde || 'dd/MM/yyyy';
+      const fechaHasta = this.filtroFechaHasta || 'dd/MM/yyyy';
+      doc.text(`Fecha desde: ${fechaDesde}`, 20, 65);
+      doc.text(`Fecha hasta: ${fechaHasta}`, 110, 65);
 
-      doc.setTextColor(0);
+      // 🔥 ORDENAR reservas por fecha y luego por tramo horario
+      const reservasOrdenadas = [...this.filtradoReservas].sort((a, b) => {
+        // Primero ordenar por fecha
+        const fechaComparison = new Date(a.fecha).getTime() - new Date(b.fecha).getTime();
+        if (fechaComparison !== 0) {
+          return fechaComparison;
+        }
+
+        // Si las fechas son iguales, ordenar por hora de inicio del tramo
+        const horaA = this.extraerHoraInicioParaOrdenar(a.tramoHorario);
+        const horaB = this.extraerHoraInicioParaOrdenar(b.tramoHorario);
+        return horaA - horaB;
+      });
+
+      // ✅ TABLA CON ESTILO VERDE OSCURO
       autoTable(doc, {
-        head: [['Tipo', 'Espacio/Material', 'Fecha', 'Tramo Horario', 'Profesor', 'Estado']],
-        body: this.filtradoReservas.map(r => [
+        head: [['Fecha', 'Tipo', 'Espacio/Material', 'Tramo Horario', 'Profesor', 'Estado']],
+        body: reservasOrdenadas.map(r => [
+          r.fecha,
           r.tipo,
           r.tipo === 'Aula' ? r.espacio : r.recurso,
-          r.fecha,
-          r.horaInicio,
+          r.tramoHorario,
           r.profesor,
           r.estado
         ]),
-        startY: 93,
+        startY: 80,
         styles: {
           halign: 'center',
           valign: 'middle',
           fontSize: 9,
-          cellPadding: 4
+          cellPadding: 5,
+          lineColor: [200, 200, 200],
+          lineWidth: 0.1
         },
         headStyles: {
-          fillColor: [60, 126, 102],
+          fillColor: [25, 77, 67],
           textColor: [255, 255, 255],
           fontStyle: 'bold',
-          fontSize: 10
+          fontSize: 10,
+          halign: 'center'
         },
         alternateRowStyles: {
-          fillColor: [248, 249, 250]
+          fillColor: [245, 245, 245]
         },
-        margin: { left: 15, right: 15 }
+        margin: { left: 20, right: 20 },
+        tableLineColor: [200, 200, 200],
+        tableLineWidth: 0.1
       });
 
-      const pageCount = doc.getNumberOfPages();
-      for (let i = 1; i <= pageCount; i++) {
-        doc.setPage(i);
-        doc.setFontSize(8);
-        doc.setTextColor(150);
-        doc.text(
-          `Página ${i} de ${pageCount}`,
-          pageWidth / 2,
-          doc.internal.pageSize.getHeight() - 10,
-          { align: 'center' }
-        );
+      // 📄 PIE DE PÁGINA
+      doc.setFontSize(8);
+      doc.setTextColor(100, 100, 100);
+      doc.text(
+        `Total de reservas: ${this.filtradoReservas.length}`,
+        20,
+        pageHeight - 15
+      );
 
-        doc.text(
-          'IES Almudeyne - Sistema de Gestión de Reservas',
-          pageWidth / 2,
-          doc.internal.pageSize.getHeight() - 5,
-          { align: 'center' }
-        );
-      }
+      const fechaGeneracion = new Date().toLocaleDateString('es-ES', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+      });
+      doc.text(
+        `Fecha de generación: ${fechaGeneracion}`,
+        pageWidth / 2,
+        pageHeight - 15,
+        { align: 'center' }
+      );
 
-      doc.save(`reservas_almudeyne_${new Date().getTime()}.pdf`);
-      console.log('📄 PDF generado con éxito con', this.filtradoReservas.length, 'reservas');
+      doc.text(
+        'IES Almudeyne',
+        pageWidth - 20,
+        pageHeight - 15,
+        { align: 'right' }
+      );
+
+      // 💾 GUARDAR PDF
+      doc.save(`todas_reservas_${new Date().getTime()}.pdf`);
+      console.log('📄 PDF generado con estilo personalizado y ordenado');
     };
 
     logo.onerror = () => {
@@ -316,69 +374,84 @@ export class TodasLasReservasComponent implements OnInit {
     };
   }
 
+  // 🔥 VERSIÓN SIN LOGO (por si falla la carga)
   generarPDFSinLogo(): void {
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
 
+    // Borde superior azul
+    doc.setDrawColor(41, 128, 185);
+    doc.setLineWidth(1.5);
+    doc.line(10, 10, pageWidth - 10, 10);
+
+    doc.setFontSize(8);
+    doc.setTextColor(41, 128, 185);
+    doc.text('FORMATO DE IMPRESIÓN TODAS LAS RESERVAS', 15, 8);
+
+    // Título
     doc.setFontSize(18);
     doc.setFont('helvetica', 'bold');
-    doc.text('IES ALMUDEYNE', pageWidth / 2, 20, { align: 'center' });
+    doc.setTextColor(0, 0, 0);
+    doc.text('TODAS LAS RESERVAS', pageWidth / 2, 25, { align: 'center' });
 
-    doc.setFontSize(14);
-    doc.setFont('helvetica', 'normal');
-    doc.text('Historial de Reservas', pageWidth / 2, 28, { align: 'center' });
-
+    doc.setDrawColor(200, 200, 200);
     doc.setLineWidth(0.5);
-    doc.setDrawColor(60, 126, 102);
-    doc.line(50, 33, pageWidth - 50, 33);
+    doc.line(60, 32, pageWidth - 60, 32);
 
+    // Información
+    doc.setFontSize(10);
+    doc.text('LISTADO DE RESERVAS', 20, 45);
+
+    doc.setFont('helvetica', 'normal');
     doc.setFontSize(9);
-    doc.setTextColor(100);
     const fechaGeneracion = new Date().toLocaleDateString('es-ES');
-    doc.text(`Fecha: ${fechaGeneracion} | Total: ${this.filtradoReservas.length} reservas`, pageWidth / 2, 40, { align: 'center' });
+    doc.text(`Fecha: ${fechaGeneracion}`, 20, 52);
 
-    doc.setTextColor(0);
+    // Tabla con ordenación
+    const reservasOrdenadas = [...this.filtradoReservas].sort((a, b) => {
+      const fechaComparison = new Date(a.fecha).getTime() - new Date(b.fecha).getTime();
+      if (fechaComparison !== 0) return fechaComparison;
+
+      const horaA = this.extraerHoraInicioParaOrdenar(a.tramoHorario);
+      const horaB = this.extraerHoraInicioParaOrdenar(b.tramoHorario);
+      return horaA - horaB;
+    });
+
     autoTable(doc, {
-      head: [['Tipo', 'Espacio/Material', 'Fecha', 'Tramo Horario', 'Profesor', 'Estado']],
-      body: this.filtradoReservas.map(r => [
+      head: [['Fecha', 'Tipo', 'Espacio/Material', 'Tramo Horario', 'Profesor', 'Estado']],
+      body: reservasOrdenadas.map(r => [
+        r.fecha,
         r.tipo,
         r.tipo === 'Aula' ? r.espacio : r.recurso,
-        r.fecha,
-        r.horaInicio,
+        r.tramoHorario,
         r.profesor,
         r.estado
       ]),
-      startY: 47,
+      startY: 65,
       styles: {
         halign: 'center',
-        valign: 'middle',
         fontSize: 9,
-        cellPadding: 4
+        cellPadding: 5,
+        lineColor: [200, 200, 200],
+        lineWidth: 0.1
       },
       headStyles: {
-        fillColor: [60, 126, 102],
+        fillColor: [25, 77, 67],
         textColor: [255, 255, 255],
         fontStyle: 'bold'
       },
       alternateRowStyles: {
-        fillColor: [248, 249, 250]
-      }
+        fillColor: [245, 245, 245]
+      },
+      margin: { left: 20, right: 20 }
     });
 
-    const pageCount = doc.getNumberOfPages();
-    for (let i = 1; i <= pageCount; i++) {
-      doc.setPage(i);
-      doc.setFontSize(8);
-      doc.setTextColor(150);
-      doc.text(
-        `Página ${i} de ${pageCount}`,
-        pageWidth / 2,
-        doc.internal.pageSize.getHeight() - 10,
-        { align: 'center' }
-      );
-    }
+    doc.setFontSize(8);
+    doc.setTextColor(100);
+    doc.text(`Total: ${this.filtradoReservas.length}`, pageWidth / 2, pageHeight - 10, { align: 'center' });
 
-    doc.save(`reservas_almudeyne_${new Date().getTime()}.pdf`);
+    doc.save(`todas_reservas_${new Date().getTime()}.pdf`);
   }
 
   get totalPages(): number {
@@ -440,7 +513,7 @@ export class TodasLasReservasComponent implements OnInit {
       ).subscribe({
         next: (resultado) => {
           console.log('📊 Resultado verificación:', resultado);
-          
+
           if (resultado.disponible) {
             // ✅ Está disponible, proceder a guardar
             this.actualizarReservaEspacio(dto);
@@ -454,10 +527,10 @@ export class TodasLasReservasComponent implements OnInit {
               tramo: this.reservaSeleccionada.horaInicio,
               idReservaConflictiva: resultado.idReserva
             };
-            
+
             // 🔥 Buscar la reserva conflictiva completa
             this.reservaConflictiva = this.reservas.find(r => r.id === resultado.idReserva);
-            
+
             this.mostrarModalConflicto = true;
           }
         },
@@ -481,7 +554,7 @@ export class TodasLasReservasComponent implements OnInit {
       ).subscribe({
         next: (resultado) => {
           console.log('📊 Resultado verificación:', resultado);
-          
+
           if (resultado.disponible) {
             // ✅ Está disponible, proceder a guardar
             this.actualizarReservaRecurso(dto);
@@ -495,10 +568,10 @@ export class TodasLasReservasComponent implements OnInit {
               tramo: this.reservaSeleccionada.horaInicio,
               idReservaConflictiva: resultado.idReserva
             };
-            
+
             // 🔥 Buscar la reserva conflictiva completa
             this.reservaConflictiva = this.reservas.find(r => r.id === resultado.idReserva);
-            
+
             this.mostrarModalConflicto = true;
           }
         },
@@ -563,10 +636,10 @@ export class TodasLasReservasComponent implements OnInit {
         next: () => {
           console.log('✅ Reserva conflictiva de espacio eliminada');
           this.mostrarMensajeInformativo('Reserva conflictiva eliminada. Procediendo con la modificación...', 'info');
-          
+
           // Cerrar modal de conflicto
           this.cerrarModalConflicto();
-          
+
           // Proceder con la modificación original
           setTimeout(() => {
             this.procesando = false;
@@ -584,10 +657,10 @@ export class TodasLasReservasComponent implements OnInit {
         next: () => {
           console.log('✅ Reserva conflictiva de recurso eliminada');
           this.mostrarMensajeInformativo('Reserva conflictiva eliminada. Procediendo con la modificación...', 'info');
-          
+
           // Cerrar modal de conflicto
           this.cerrarModalConflicto();
-          
+
           // Proceder con la modificación original
           setTimeout(() => {
             this.procesando = false;
@@ -676,5 +749,18 @@ export class TodasLasReservasComponent implements OnInit {
   cerrarModalInformativo(): void {
     this.mostrarModalInformativo = false;
     this.mensajeInformativo = '';
+  }
+  extraerHoraInicioParaOrdenar(tramoHorario: string): number {
+    if (!tramoHorario) return 0;
+
+    // Extraer la hora de inicio (ej: "08:00-09:00" -> "08:00")
+    const horaInicio = tramoHorario.includes('-')
+      ? tramoHorario.split('-')[0].trim()
+      : tramoHorario;
+
+    // Convertir a minutos desde medianoche para facilitar comparación
+    // ej: "08:00" -> 8*60 + 0 = 480
+    const [horas, minutos] = horaInicio.split(':').map(Number);
+    return horas * 60 + minutos;
   }
 }

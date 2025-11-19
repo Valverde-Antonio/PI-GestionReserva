@@ -2,9 +2,16 @@
   <h2 class="mb-3">Todas las Reservas</h2>
 
   <div class="row g-3 mb-4">
+    <!-- Fecha Desde -->
     <div class="col-md-3">
-      <label class="form-label">Filtrar por fecha:</label>
-      <input type="date" class="form-control" [(ngModel)]="filtroFecha" (change)="filtrarReservas()">
+      <label class="form-label"><i class="bi bi-calendar3"></i> Fecha Desde:</label>
+      <input type="date" class="form-control" [(ngModel)]="filtroFechaDesde" (change)="filtrarReservas()">
+    </div>
+
+    <!-- Fecha Hasta -->
+    <div class="col-md-3">
+      <label class="form-label"><i class="bi bi-calendar3"></i> Fecha Hasta:</label>
+      <input type="date" class="form-control" [(ngModel)]="filtroFechaHasta" (change)="filtrarReservas()">
     </div>
     <div class="col-md-3">
       <label class="form-label">Filtrar por tipo:</label>
@@ -192,7 +199,7 @@
         <h6 class="alert-heading">⚠️ Esta reserva ya está ocupada</h6>
         <hr>
         <p class="mb-2">
-          <strong>{{ conflictoInfo?.nombreEspacio || conflictoInfo?.nombreRecurso }}</strong> 
+          <strong>{{ conflictoInfo?.nombreEspacio || conflictoInfo?.nombreRecurso }}</strong>
           ya está reservado para:
         </p>
         <ul class="mb-0">
@@ -201,13 +208,14 @@
           <li><strong>Reservado por:</strong> {{ conflictoInfo?.reservadoPor }}</li>
         </ul>
       </div>
-      
+
       <div class="alert alert-info mb-0">
         <h6 class="alert-heading">
           <i class="bi bi-shield-check"></i> Privilegios de Directivo
         </h6>
         <p class="mb-0">
-          Como directivo, tienes la opción de <strong>eliminar la reserva que está ocupando este espacio/horario</strong> 
+          Como directivo, tienes la opción de <strong>eliminar la reserva que está ocupando este
+            espacio/horario</strong>
           para poder proceder con tu modificación.
         </p>
       </div>
@@ -227,38 +235,34 @@
 <!-- 🔥 MODAL INFORMATIVO (Success/Error/Warning/Info) -->
 <div class="custom-backdrop" *ngIf="mostrarModalInformativo">
   <div class="custom-modal-box text-center">
-    <div class="modal-header" 
-         [ngClass]="{
+    <div class="modal-header" [ngClass]="{
            'bg-success text-white': tipoMensaje === 'success',
            'bg-danger text-white': tipoMensaje === 'error',
            'bg-warning text-dark': tipoMensaje === 'warning',
            'bg-info text-white': tipoMensaje === 'info'
          }">
       <h5 class="modal-title w-100">
-        <i class="bi" 
-           [ngClass]="{
+        <i class="bi" [ngClass]="{
              'bi-check-circle-fill': tipoMensaje === 'success',
              'bi-x-circle-fill': tipoMensaje === 'error',
              'bi-exclamation-triangle-fill': tipoMensaje === 'warning',
              'bi-info-circle-fill': tipoMensaje === 'info'
            }"></i>
-        {{ tipoMensaje === 'success' ? 'Éxito' : 
-           tipoMensaje === 'error' ? 'Error' :
-           tipoMensaje === 'warning' ? 'Advertencia' : 'Información' }}
+        {{ tipoMensaje === 'success' ? 'Éxito' :
+        tipoMensaje === 'error' ? 'Error' :
+        tipoMensaje === 'warning' ? 'Advertencia' : 'Información' }}
       </h5>
     </div>
     <div class="modal-body">
       <p class="fs-5 mb-0">{{ mensajeInformativo }}</p>
     </div>
     <div class="modal-footer justify-content-center">
-      <button class="btn" 
-              [ngClass]="{
+      <button class="btn" [ngClass]="{
                 'btn-success': tipoMensaje === 'success',
                 'btn-danger': tipoMensaje === 'error',
                 'btn-warning': tipoMensaje === 'warning',
                 'btn-info': tipoMensaje === 'info'
-              }"
-              (click)="cerrarModalInformativo()">
+              }" (click)="cerrarModalInformativo()">
         <i class="bi bi-check-lg"></i> Cerrar
       </button>
     </div>
