@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/recursos") // ✅ Ruta corregida
+@RequestMapping("/api/recursos") 
 @CrossOrigin(origins = "*", allowedHeaders = "*")
 public class RecursoController {
 
@@ -17,7 +17,6 @@ public class RecursoController {
     private RecursoRepository recursoRepository;
 @GetMapping
 public ResponseEntity<?> obtenerTodos() {
-    System.out.println("✅ ENTRÓ AL MÉTODO obtenerTodos()");
     try {
         List<Recurso> recursos = recursoRepository.findAll();
         return ResponseEntity.ok(recursos);

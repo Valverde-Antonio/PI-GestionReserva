@@ -137,10 +137,8 @@
                   </button>
                 </ng-container>
                 <ng-template #soloVisualizacion>
-                  <!-- Sin botones para reservas ajenas -->
                 </ng-template>
               </div>
-              <!-- Si NO es mi reserva, no mostrar botones -->
             </div>
           </div>
         </div>
@@ -178,7 +176,7 @@
   </div>
 </div>
 
-<!-- 🔥 MODAL EDITAR -->
+<!--  MODAL EDITAR -->
 <div class="custom-backdrop" *ngIf="mostrarModalActualizar">
   <div class="custom-modal-box">
     <div class="modal-header bg-success text-white d-flex justify-content-between align-items-center">
@@ -238,7 +236,7 @@
   </div>
 </div>
 
-<!-- 🔥 MODAL ELIMINAR/CANCELAR -->
+<!-- MODAL ELIMINAR/CANCELAR -->
 <div class="custom-backdrop" *ngIf="mostrarModalEliminar">
   <div class="custom-modal-box text-center">
     <div class="modal-header bg-danger text-white">
@@ -260,7 +258,7 @@
   </div>
 </div>
 
-<!-- 🔥 MODAL DE CONFLICTO (Espacio/Recurso ocupado) -->
+<!-- MODAL DE CONFLICTO (Espacio/Recurso ocupado) -->
 <div class="custom-backdrop" *ngIf="mostrarModalConflicto">
   <div class="custom-modal-box">
     <div class="modal-header bg-warning text-dark d-flex justify-content-between align-items-center">
@@ -296,7 +294,7 @@
   </div>
 </div>
 
-<!-- 🔥 MODAL INFORMATIVO (Success/Error/Warning/Info) -->
+<!--  MODAL INFORMATIVO (Success/Error/Warning/Info) -->
 <div class="custom-backdrop" *ngIf="mostrarModalInformativo">
   <div class="custom-modal-box text-center">
     <div class="modal-header" [ngClass]="{

@@ -12,11 +12,10 @@ import java.util.List;
 @Repository
 public interface ReservaRecursoRepository extends JpaRepository<ReservaRecurso, Integer> {
 
-    // 🔥 CORREGIDO: Usar Integer en lugar de Long
     boolean existsByFechaAndTramoHorarioAndRecurso_IdRecurso(
         LocalDate fecha, 
         String tramoHorario, 
-        Integer idRecurso  // 🔥 Cambiado de Long a Integer
+        Integer idRecurso 
     );
 
     // Métodos existentes

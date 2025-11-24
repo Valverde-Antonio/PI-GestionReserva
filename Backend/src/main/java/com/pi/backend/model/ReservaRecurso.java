@@ -9,7 +9,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 @Table(name = "reservas_recursos", uniqueConstraints = {
     @UniqueConstraint(columnNames = {"fecha", "tramo_horario", "id_recurso"})
 })
-@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"}) // ✅ SOLUCIÓN
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"}) 
 public class ReservaRecurso {
 
     @Id

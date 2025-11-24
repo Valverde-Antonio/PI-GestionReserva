@@ -13,19 +13,27 @@ import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
+/**
+ * Servicio para la gestión de reservas de espacios/aulas
+ */
 @Service
 public class ReservaEspacioService {
 
     @Autowired
     private ReservaEspacioRepository reservaEspacioRepository;
 
+    /**
+     * Obtiene todas las reservas de espacios
+     */
     public List<ReservaEspacio> obtenerTodas() {
         return reservaEspacioRepository.findAll();
     }
 
+    /**
+     * Busca reservas por fecha y nombre del aula
+     */
     public List<ReservaEspacioDTO> buscarPorFechaYAula(String fecha, String nombreAula) {
         LocalDate fechaParseada = LocalDate.parse(fecha);
         List<ReservaEspacio> reservas = reservaEspacioRepository.findByFechaAndEspacio_Nombre(fechaParseada, nombreAula);
@@ -43,6 +51,9 @@ public class ReservaEspacioService {
         }).collect(Collectors.toList());
     }
 
+    /**
+     * Guarda una nueva reserva de espacio
+     */
     public ReservaEspacio guardarReserva(ReservaEspacioDTO dto) {
         ReservaEspacio reserva = new ReservaEspacio();
         reserva.setFecha(LocalDate.parse(dto.getFecha()));
@@ -59,6 +70,9 @@ public class ReservaEspacioService {
         return reservaEspacioRepository.save(reserva);
     }
 
+    /**
+     * Actualiza una reserva de espacio existente
+     */
     public void actualizarReserva(int id, ReservaEspacioDTO dto) {
         ReservaEspacio reserva = reservaEspacioRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Reserva no encontrada"));
@@ -76,38 +90,34 @@ public class ReservaEspacioService {
         reservaEspacioRepository.save(reserva);
     }
 
+    /**
+     * Elimina una reserva de espacio
+     */
     public void eliminarReserva(int id) {
         if (reservaEspacioRepository.existsById(id)) {
             reservaEspacioRepository.deleteById(id);
             reservaEspacioRepository.flush();
-            System.out.println("Reserva eliminada correctamente. ID: " + id);
         } else {
             System.err.println("Error: No existe una reserva con ID: " + id);
             throw new RuntimeException("No existe la reserva con ID: " + id);
         }
     }
 
-    // 🔥 NUEVO: Verificar disponibilidad de espacio
+    /**
+     * Verifica la disponibilidad de un espacio en una fecha y horario específicos
+     */
     public Map<String, Object> verificarDisponibilidad(String fecha, String tramoHorario, Long idEspacio, Long idReservaActual) {
         Map<String, Object> resultado = new HashMap<>();
         
         try {
             LocalDate fechaParseada = LocalDate.parse(fecha);
             
-            System.out.println("🔍 Verificando disponibilidad:");
-            System.out.println("  - Fecha: " + fecha);
-            System.out.println("  - Tramo: " + tramoHorario);
-            System.out.println("  - ID Espacio: " + idEspacio);
-            System.out.println("  - ID Reserva actual: " + idReservaActual);
-            
-            // Buscar reservas que coincidan con fecha, tramo y espacio
             List<ReservaEspacio> reservasExistentes = reservaEspacioRepository.findAll().stream()
                 .filter(r -> r.getFecha().equals(fechaParseada) 
                           && r.getTramoHorario().equals(tramoHorario)
                           && r.getEspacio().getIdEspacio().equals(idEspacio.intValue()))
                 .collect(Collectors.toList());
             
-            // Si hay una reserva actual (estamos editando), excluirla
             if (idReservaActual != null) {
                 reservasExistentes = reservasExistentes.stream()
                     .filter(r -> !r.getIdReserva().equals(idReservaActual.intValue()))
@@ -115,11 +125,9 @@ public class ReservaEspacioService {
             }
             
             if (reservasExistentes.isEmpty()) {
-                System.out.println("✅ Espacio disponible");
                 resultado.put("disponible", true);
             } else {
                 ReservaEspacio reservaConflicto = reservasExistentes.get(0);
-                System.out.println("❌ Espacio NO disponible - Reservado por: " + reservaConflicto.getProfesor().getNombre());
                 
                 resultado.put("disponible", false);
                 resultado.put("reservadoPor", reservaConflicto.getProfesor().getNombre());
@@ -128,13 +136,16 @@ public class ReservaEspacioService {
             }
             
         } catch (Exception e) {
-            System.err.println("❌ Error al verificar disponibilidad: " + e.getMessage());
+            System.err.println("Error al verificar disponibilidad: " + e.getMessage());
             resultado.put("error", e.getMessage());
         }
         
         return resultado;
     }
 
+    /**
+     * Convierte una entidad ReservaEspacio a DTO
+     */
     private ReservaEspacioResponseDTO convertirADTO(ReservaEspacio reserva) {
         ReservaEspacioResponseDTO dto = new ReservaEspacioResponseDTO();
         dto.setIdReserva(reserva.getIdReserva().longValue());
@@ -154,12 +165,18 @@ public class ReservaEspacioService {
         return dto;
     }
 
+    /**
+     * Filtra reservas por fecha, profesor y/o espacio
+     */
     public List<ReservaEspacioResponseDTO> filtrarReservas(String fecha, Long idProfesor, Long idEspacio) {
         LocalDate fechaParseada = (fecha != null && !fecha.isEmpty()) ? LocalDate.parse(fecha) : null;
         List<ReservaEspacio> reservas = reservaEspacioRepository.filtrarReservas(fechaParseada, idProfesor, idEspacio);
         return reservas.stream().map(this::convertirADTO).collect(Collectors.toList());
     }
 
+    /**
+     * Obtiene los turnos/tramos horarios disponibles
+     */
     public List<String> obtenerTurnosDisponibles() {
         return reservaEspacioRepository.findDistinctTramoHorarios();
     }

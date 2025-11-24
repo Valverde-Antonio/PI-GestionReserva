@@ -3,7 +3,6 @@
 
   <div class="mb-3">
     <label for="fecha" class="form-label">Fecha</label>
-    <!-- ✅ Agregado [min] para bloquear fechas pasadas -->
     <input 
       id="fecha" 
       type="date" 
@@ -36,7 +35,7 @@
     </thead>
     <tbody>
       <tr *ngFor="let turno of turnos">
-        <!-- ✅ Mostrar tramo horario completo HH:mm-HH:mm -->
+        <!-- Mostrar tramo horario completo HH:mm-HH:mm -->
         <td class="align-middle text-center">
           <strong>{{ formatTramo(turno) }}</strong>
         </td>

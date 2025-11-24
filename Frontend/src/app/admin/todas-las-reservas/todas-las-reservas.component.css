@@ -10,8 +10,8 @@
   height: 100%;
   background-color: rgba(0, 0, 0, 0.5);
   display: flex;
-  align-items: center; /* 🔥 Centrado vertical */
-  justify-content: center; /* 🔥 Centrado horizontal */
+  align-items: center; 
+  justify-content: center; 
   z-index: 1050;
   animation: fadeIn 0.3s ease-in-out;
 }
@@ -19,8 +19,8 @@
 .custom-modal-box {
   background: white;
   width: 90%;
-  max-width: 600px; /* 🔥 Ancho máximo del modal */
-  border-radius: 12px; /* 🔥 Bordes redondeados en todos los lados */
+  max-width: 600px; 
+  border-radius: 12px; 
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
   overflow: hidden;
   animation: zoomIn 0.3s ease-out;
@@ -38,7 +38,7 @@
   }
 }
 
-/* Animación de entrada del modal (zoom) */
+
 @keyframes zoomIn {
   from {
     transform: scale(0.8);
@@ -297,11 +297,6 @@
 .border-success {
   border-left: 4px solid #198754 !important;
 }
-
-/* =============================================
-   BADGES
-   ============================================= */
-
 .badge {
   padding: 0.35em 0.65em;
   font-weight: 500;

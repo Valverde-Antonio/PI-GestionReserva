@@ -12,6 +12,9 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Controlador REST para gestionar las reservas de espacios/aulas
+ */
 @RestController
 @RequestMapping("/api/reservaEspacio")
 @CrossOrigin(origins = "*")
@@ -20,6 +23,9 @@ public class ReservaEspacioController {
     @Autowired
     private ReservaEspacioService reservaEspacioService;
 
+    /**
+     * Obtiene todas las reservas de espacios
+     */
     @GetMapping
     public ResponseEntity<?> obtenerReservas() {
         try {
@@ -35,11 +41,14 @@ public class ReservaEspacioController {
                     .toList();
             return ResponseEntity.ok(dtoList);
         } catch (Exception e) {
-            e.printStackTrace();
+            System.err.println("Error al obtener reservas de espacios: " + e.getMessage());
             return ResponseEntity.internalServerError().body("Error al obtener reservas de espacios");
         }
     }
 
+    /**
+     * Busca reservas por fecha y nombre del aula
+     */
     @GetMapping("/buscar")
     public ResponseEntity<List<ReservaEspacioDTO>> buscarPorFechaYAula(
             @RequestParam String fecha,
@@ -48,6 +57,9 @@ public class ReservaEspacioController {
         return ResponseEntity.ok(reservas);
     }
 
+    /**
+     * Crea una nueva reserva de espacio
+     */
     @PostMapping("/crear")
     public ResponseEntity<?> crearReserva(@RequestBody ReservaEspacioDTO dto) {
         try {
@@ -59,6 +71,9 @@ public class ReservaEspacioController {
         }
     }
 
+    /**
+     * Actualiza una reserva de espacio existente
+     */
     @PutMapping("/actualizar/{id}")
     public ResponseEntity<?> actualizarReserva(@PathVariable Long id, @RequestBody ReservaEspacioDTO dto) {
         try {
@@ -69,9 +84,11 @@ public class ReservaEspacioController {
         }
     }
 
+    /**
+     * Elimina una reserva de espacio
+     */
     @DeleteMapping("/eliminar/{id}")
     public ResponseEntity<?> eliminarReserva(@PathVariable Long id) {
-        System.out.println("Intentando eliminar reserva con ID: " + id);
         try {
             reservaEspacioService.eliminarReserva(id.intValue());
             return ResponseEntity.ok("Reserva eliminada correctamente");
@@ -84,6 +101,9 @@ public class ReservaEspacioController {
         }
     }
 
+    /**
+     * Filtra reservas por fecha, profesor y/o espacio
+     */
     @GetMapping("/filtrar")
     public List<ReservaEspacioResponseDTO> filtrarReservasEspacio(
             @RequestParam(required = false) String fecha,
@@ -93,12 +113,17 @@ public class ReservaEspacioController {
         return reservaEspacioService.filtrarReservas(fecha, idProfesor, idEspacio);
     }
 
+    /**
+     * Obtiene los turnos disponibles
+     */
     @GetMapping("/turnos")
     public List<String> obtenerTurnos() {
         return reservaEspacioService.obtenerTurnosDisponibles();
     }
 
-    // 🔥 NUEVO: Endpoint para verificar disponibilidad
+    /**
+     * Verifica la disponibilidad de un espacio en una fecha y horario específicos
+     */
     @GetMapping("/verificar-disponibilidad")
     public ResponseEntity<Map<String, Object>> verificarDisponibilidad(
             @RequestParam String fecha,
@@ -106,13 +131,11 @@ public class ReservaEspacioController {
             @RequestParam Long idEspacio,
             @RequestParam(required = false) Long idReservaActual) {
         try {
-            System.out.println("🔍 Petición de verificación de disponibilidad recibida");
             Map<String, Object> resultado = reservaEspacioService.verificarDisponibilidad(
                 fecha, tramoHorario, idEspacio, idReservaActual
             );
             return ResponseEntity.ok(resultado);
         } catch (Exception e) {
-            System.err.println("❌ Error al verificar disponibilidad: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("error", e.getMessage()));
         }

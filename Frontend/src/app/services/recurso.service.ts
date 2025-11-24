@@ -3,15 +3,15 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
 export interface Recurso {
-  idRecurso: number; // ✅ coincide con backend
-  nombre: string;    // ✅ coincide con backend
+  idRecurso: number; 
+  nombre: string;    
 }
 
 @Injectable({
   providedIn: 'root'
 })
 export class RecursoService {
-  private apiUrl = 'http://localhost:8085/api/recursos'; // asumes controlador en /api/recursos
+  private apiUrl = 'http://localhost:8085/api/recursos'; 
 
   constructor(private http: HttpClient) {}
 

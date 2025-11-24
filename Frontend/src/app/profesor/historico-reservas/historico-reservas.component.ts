@@ -22,7 +22,8 @@ export class HistoricoReservasComponent implements OnInit {
   reservas: any[] = [];
 
   filtroFechaDesde: string = '';
-  filtroFechaHasta: string = ''; filtroMaterial: string = '';
+  filtroFechaHasta: string = '';
+  filtroMaterial: string = '';
   filtroAula: string = '';
   filtroEstado: string = '';
   filtroTipo: string = 'Todas';
@@ -63,7 +64,7 @@ export class HistoricoReservasComponent implements OnInit {
   mensajeInformativo: string = '';
   tipoMensaje: 'success' | 'error' | 'warning' | 'info' = 'info';
 
-  // Loading states
+  // Estados de carga
   cargando: boolean = false;
   procesando: boolean = false;
 
@@ -78,25 +79,22 @@ export class HistoricoReservasComponent implements OnInit {
   ngOnInit(): void {
     this.usuarioLogueado = this.authService.getNombreCompleto();
     this.idProfesorActual = this.authService.getIdProfesor();
-
     this.filtroFechaDesde = this.obtenerFechaHoy();
     this.filtroFechaHasta = this.obtenerFechaHoy();
-
-    console.log('👤 Usuario actual:', this.usuarioLogueado, 'ID:', this.idProfesorActual);
-
     this.cargarDatos();
   }
 
+  /**
+   * Carga todos los datos necesarios: profesores, espacios, recursos y reservas
+   */
   cargarDatos(): void {
     this.cargando = true;
-
     this.cargarProfesores();
 
     this.espacioService.getEspacios().subscribe({
       next: data => {
         this.espacios = data;
         this.aulas = data.map((e: any) => e.nombre).sort();
-        console.log('🏫 Espacios cargados:', this.espacios);
       },
       error: err => console.error('Error al cargar espacios:', err)
     });
@@ -105,7 +103,6 @@ export class HistoricoReservasComponent implements OnInit {
       next: data => {
         this.recursos = data;
         this.materiales = data;
-        console.log('📦 Recursos cargados:', this.recursos);
       },
       error: err => console.error('Error al cargar recursos:', err)
     });
@@ -113,20 +110,25 @@ export class HistoricoReservasComponent implements OnInit {
     this.cargarReservas();
   }
 
+  /**
+   * Carga la lista de profesores
+   */
   cargarProfesores(): void {
     this.profesorService.getProfesores().subscribe({
       next: data => {
         this.profesores = data;
-        console.log('📘 Profesores cargados:', this.profesores);
       },
       error: err => console.error('Error al cargar profesores:', err)
     });
   }
 
+  /**
+   * Carga el historial completo de reservas (espacios y recursos)
+   */
   cargarReservas(): void {
     this.reservaService.getHistorialCompleto().subscribe({
       next: ([reservasEspacios, reservasRecursos]: [any[], any[]]) => {
-        // Procesar TODAS las reservas de espacios
+        // Procesar reservas de espacios
         const todasReservasEspacios = (reservasEspacios || [])
           .map((r: any) => ({
             id: r.idReserva,
@@ -142,7 +144,7 @@ export class HistoricoReservasComponent implements OnInit {
             idProfesor: r.idProfesor
           }));
 
-        // Procesar TODAS las reservas de recursos
+        // Procesar reservas de recursos
         const todasReservasRecursos = (reservasRecursos || [])
           .map((r: any) => ({
             id: r.idReserva,
@@ -163,9 +165,6 @@ export class HistoricoReservasComponent implements OnInit {
         });
 
         this.reservas = this.historial;
-
-        console.log('📋 Todas las reservas cargadas:', this.historial.length);
-        console.log('📋 Mis reservas:', this.historial.filter(r => this.esMiReserva(r)).length);
         this.filtrarReservas();
         this.cargando = false;
       },
@@ -176,10 +175,16 @@ export class HistoricoReservasComponent implements OnInit {
     });
   }
 
+  /**
+   * Verifica si una reserva pertenece al profesor actual
+   */
   esMiReserva(reserva: any): boolean {
     return Number(reserva.idProfesor) === this.idProfesorActual;
   }
 
+  /**
+   * Extrae la hora de inicio de un tramo horario
+   */
   extraerHoraInicio(tramoHorario: string): string {
     if (!tramoHorario) return '';
     if (tramoHorario.includes('-')) {
@@ -188,6 +193,9 @@ export class HistoricoReservasComponent implements OnInit {
     return tramoHorario;
   }
 
+  /**
+   * Calcula el estado de una reserva según su fecha
+   */
   calcularEstado(fecha: string): string {
     const hoy = new Date();
     hoy.setHours(0, 0, 0, 0);
@@ -202,9 +210,12 @@ export class HistoricoReservasComponent implements OnInit {
     }
   }
 
+  /**
+   * Aplica los filtros seleccionados a las reservas
+   */
   filtrarReservas(): void {
     this.filtradoReservas = this.historial.filter(h => {
-      // 🔥 Filtro por rango de fechas
+      // Filtro por rango de fechas
       let coincideFecha = true;
       if (this.filtroFechaDesde && this.filtroFechaHasta) {
         const fechaReserva = new Date(h.fecha + 'T00:00:00');
@@ -229,9 +240,11 @@ export class HistoricoReservasComponent implements OnInit {
       return coincideFecha && coincideMaterial && coincideAula && coincideEstado && coincideTipo;
     });
     this.currentPage = 1;
-    console.log('🔍 Reservas filtradas:', this.filtradoReservas.length);
   }
 
+  /**
+   * Limpia todos los filtros aplicados
+   */
   limpiarFiltros(): void {
     this.filtroFechaDesde = this.obtenerFechaHoy();
     this.filtroFechaHasta = this.obtenerFechaHoy();
@@ -242,21 +255,33 @@ export class HistoricoReservasComponent implements OnInit {
     this.filtrarReservas();
   }
 
+  /**
+   * Calcula el número total de páginas
+   */
   get totalPages(): number {
     return Math.ceil(this.filtradoReservas.length / this.pageSize);
   }
 
+  /**
+   * Obtiene las reservas de la página actual
+   */
   get reservasPaginadas(): any[] {
     const start = (this.currentPage - 1) * this.pageSize;
     return this.filtradoReservas.slice(start, start + this.pageSize);
   }
 
+  /**
+   * Cambia a una página específica
+   */
   cambiarPagina(pagina: number): void {
     if (pagina >= 1 && pagina <= this.totalPages) {
       this.currentPage = pagina;
     }
   }
 
+  /**
+   * Abre el modal para modificar una reserva
+   */
   modificarReserva(reserva: any): void {
     if (!this.esMiReserva(reserva)) {
       this.mostrarMensajeInformativo('No puedes modificar reservas de otros profesores', 'warning');
@@ -269,16 +294,20 @@ export class HistoricoReservasComponent implements OnInit {
     }
 
     this.reservaSeleccionada = { ...reserva };
-    console.log('📝 Editando reserva:', this.reservaSeleccionada);
     this.mostrarModalActualizar = true;
   }
 
+  /**
+   * Cierra el modal de actualización
+   */
   cerrarModal(): void {
     this.mostrarModalActualizar = false;
     this.reservaSeleccionada = null;
   }
 
-  // 🔥 NUEVA LÓGICA: Verificar disponibilidad antes de guardar
+  /**
+   * Guarda los cambios de una reserva verificando disponibilidad primero
+   */
   guardarCambios(): void {
     if (!this.reservaSeleccionada || this.procesando) return;
 
@@ -292,14 +321,13 @@ export class HistoricoReservasComponent implements OnInit {
       return;
     }
 
-    console.log('🔍 Verificando disponibilidad antes de guardar...');
     this.procesando = true;
 
     if (this.reservaSeleccionada.tipo === 'Aula') {
       const espacioSeleccionado = this.espacios.find(e => e.nombre === this.reservaSeleccionada.espacio);
       const idEspacio = espacioSeleccionado ? espacioSeleccionado.idEspacio : this.reservaSeleccionada.idEspacio;
 
-      // 🔥 Verificar disponibilidad
+      // Verificar disponibilidad del espacio
       this.reservaService.verificarDisponibilidadEspacio(
         this.reservaSeleccionada.fecha,
         this.reservaSeleccionada.tramoHorario,
@@ -307,13 +335,9 @@ export class HistoricoReservasComponent implements OnInit {
         this.reservaSeleccionada.id
       ).subscribe({
         next: (resultado) => {
-          console.log('📊 Resultado verificación:', resultado);
-
           if (resultado.disponible) {
-            // ✅ Está disponible, proceder a guardar
             this.procederAGuardarReserva();
           } else {
-            // ❌ NO está disponible, mostrar modal de conflicto
             this.procesando = false;
             this.conflictoInfo = {
               nombreEspacio: this.reservaSeleccionada.espacio,
@@ -325,17 +349,16 @@ export class HistoricoReservasComponent implements OnInit {
           }
         },
         error: (error) => {
-          console.error('❌ Error al verificar disponibilidad:', error);
+          console.error('Error al verificar disponibilidad:', error);
           this.mostrarMensajeInformativo('Error al verificar disponibilidad', 'error');
           this.procesando = false;
         }
       });
     } else {
-      // Material
       const recursoSeleccionado = this.recursos.find(r => r.nombre === this.reservaSeleccionada.recurso);
       const idRecurso = recursoSeleccionado ? recursoSeleccionado.idRecurso : this.reservaSeleccionada.idRecurso;
 
-      // 🔥 Verificar disponibilidad
+      // Verificar disponibilidad del recurso
       this.reservaService.verificarDisponibilidadRecurso(
         this.reservaSeleccionada.fecha,
         this.reservaSeleccionada.tramoHorario,
@@ -343,13 +366,9 @@ export class HistoricoReservasComponent implements OnInit {
         this.reservaSeleccionada.id
       ).subscribe({
         next: (resultado) => {
-          console.log('📊 Resultado verificación:', resultado);
-
           if (resultado.disponible) {
-            // ✅ Está disponible, proceder a guardar
             this.procederAGuardarReserva();
           } else {
-            // ❌ NO está disponible, mostrar modal de conflicto
             this.procesando = false;
             this.conflictoInfo = {
               nombreRecurso: this.reservaSeleccionada.recurso,
@@ -361,7 +380,7 @@ export class HistoricoReservasComponent implements OnInit {
           }
         },
         error: (error) => {
-          console.error('❌ Error al verificar disponibilidad:', error);
+          console.error('Error al verificar disponibilidad:', error);
           this.mostrarMensajeInformativo('Error al verificar disponibilidad', 'error');
           this.procesando = false;
         }
@@ -369,7 +388,9 @@ export class HistoricoReservasComponent implements OnInit {
     }
   }
 
-  // 🔥 NUEVO: Método para proceder con el guardado después de verificar
+  /**
+   * Procede con el guardado después de verificar disponibilidad
+   */
   procederAGuardarReserva(): void {
     const dto: any = {
       fecha: this.reservaSeleccionada.fecha,
@@ -383,9 +404,7 @@ export class HistoricoReservasComponent implements OnInit {
 
       this.reservaService.actualizarReservaEspacio(this.reservaSeleccionada.id, dto).subscribe({
         next: () => {
-          console.log('✅ Reserva de aula actualizada');
-
-          // 🔥 Actualizar la reserva inmediatamente en el array local
+          // Actualizar reserva en el array local
           const index = this.historial.findIndex(r => r.id === this.reservaSeleccionada.id);
           if (index !== -1) {
             this.historial[index].fecha = this.reservaSeleccionada.fecha;
@@ -395,16 +414,14 @@ export class HistoricoReservasComponent implements OnInit {
             this.historial[index].estado = this.calcularEstado(this.reservaSeleccionada.fecha);
           }
 
-          this.filtrarReservas(); // Actualizar vista
+          this.filtrarReservas();
           this.mostrarMensajeInformativo('Reserva actualizada correctamente', 'success');
           this.procesando = false;
           this.cerrarModal();
-
-          // Recargar después para sincronizar con backend
           setTimeout(() => this.cargarReservas(), 500);
         },
         error: (error) => {
-          console.error('❌ Error al actualizar:', error);
+          console.error('Error al actualizar:', error);
           this.mostrarMensajeInformativo(error.error || 'Error al actualizar la reserva', 'error');
           this.procesando = false;
         }
@@ -415,14 +432,13 @@ export class HistoricoReservasComponent implements OnInit {
 
       this.reservaService.actualizarReservaRecurso(this.reservaSeleccionada.id, dto).subscribe({
         next: () => {
-          console.log('✅ Reserva de material actualizada');
           this.mostrarMensajeInformativo('Reserva actualizada correctamente', 'success');
           this.procesando = false;
           this.cerrarModal();
           this.cargarReservas();
         },
         error: (error) => {
-          console.error('❌ Error al actualizar:', error);
+          console.error('Error al actualizar:', error);
           this.mostrarMensajeInformativo(error.error || 'Error al actualizar la reserva', 'error');
           this.procesando = false;
         }
@@ -430,20 +446,27 @@ export class HistoricoReservasComponent implements OnInit {
     }
   }
 
-  // 🔥 NUEVO: Métodos para manejar el modal de conflicto
+  /**
+   * Mantiene la reserva actual sin cambios
+   */
   mantenerReservaActual(): void {
-    console.log('✅ Usuario decidió mantener su reserva actual');
     this.mostrarModalConflicto = false;
     this.conflictoInfo = null;
     this.cerrarModal();
     this.mostrarMensajeInformativo('Se ha mantenido tu reserva original', 'info');
   }
 
+  /**
+   * Cierra el modal de conflicto
+   */
   cerrarModalConflicto(): void {
     this.mostrarModalConflicto = false;
     this.conflictoInfo = null;
   }
 
+  /**
+   * Abre el modal para eliminar una reserva
+   */
   eliminarReserva(reserva: any): void {
     if (!this.esMiReserva(reserva)) {
       this.mostrarMensajeInformativo('No puedes eliminar reservas de otros profesores', 'warning');
@@ -459,23 +482,24 @@ export class HistoricoReservasComponent implements OnInit {
     this.mostrarModalEliminar = true;
   }
 
+  /**
+   * Confirma y ejecuta la eliminación de una reserva
+   */
   confirmarEliminacion(): void {
     if (!this.reservaAEliminar || this.procesando) return;
 
-    console.log('🗑️ Eliminando reserva:', this.reservaAEliminar);
     this.procesando = true;
 
     if (this.reservaAEliminar.tipo === 'Aula') {
       this.reservaService.eliminarReservaEspacio(this.reservaAEliminar.id).subscribe({
         next: () => {
-          console.log('✅ Reserva de aula eliminada');
           this.mostrarMensajeInformativo('Reserva eliminada correctamente', 'success');
           this.procesando = false;
           this.cancelarEliminacion();
           this.cargarReservas();
         },
         error: (error) => {
-          console.error('❌ Error al eliminar:', error);
+          console.error('Error al eliminar:', error);
           this.mostrarMensajeInformativo('Error al eliminar la reserva', 'error');
           this.procesando = false;
         }
@@ -483,14 +507,13 @@ export class HistoricoReservasComponent implements OnInit {
     } else {
       this.reservaService.eliminarReservaRecurso(this.reservaAEliminar.id).subscribe({
         next: () => {
-          console.log('✅ Reserva de material eliminada');
           this.mostrarMensajeInformativo('Reserva eliminada correctamente', 'success');
           this.procesando = false;
           this.cancelarEliminacion();
           this.cargarReservas();
         },
         error: (error) => {
-          console.error('❌ Error al eliminar:', error);
+          console.error('Error al eliminar:', error);
           this.mostrarMensajeInformativo('Error al eliminar la reserva', 'error');
           this.procesando = false;
         }
@@ -498,27 +521,41 @@ export class HistoricoReservasComponent implements OnInit {
     }
   }
 
+  /**
+   * Cancela la eliminación de una reserva
+   */
   cancelarEliminacion(): void {
     this.reservaAEliminar = null;
     this.mostrarModalEliminar = false;
   }
 
-  // 🔥 NUEVO: Sistema de mensajes informativos
+  /**
+   * Muestra un mensaje informativo con el tipo especificado
+   */
   mostrarMensajeInformativo(mensaje: string, tipo: 'success' | 'error' | 'warning' | 'info'): void {
     this.mensajeInformativo = mensaje;
     this.tipoMensaje = tipo;
     this.mostrarModalInformativo = true;
   }
 
+  /**
+   * Cierra el modal informativo
+   */
   cerrarModalInformativo(): void {
     this.mostrarModalInformativo = false;
     this.mensajeInformativo = '';
   }
 
+  /**
+   * Exporta todas las reservas a PDF (alias de exportarPDFMisReservas)
+   */
   exportarPDFTodasReservas(): void {
     this.exportarPDFMisReservas();
   }
 
+  /**
+   * Genera un PDF con las reservas del profesor con logo institucional
+   */
   exportarPDFMisReservas(): void {
     const doc = new jsPDF();
 
@@ -529,62 +566,55 @@ export class HistoricoReservasComponent implements OnInit {
       const pageWidth = doc.internal.pageSize.getWidth();
       const pageHeight = doc.internal.pageSize.getHeight();
 
-      // 🔵 BORDE SUPERIOR AZUL
+      // Borde superior azul
       doc.setDrawColor(41, 128, 185);
       doc.setLineWidth(1.5);
       doc.line(10, 10, pageWidth - 10, 10);
 
-      // 🔵 Texto "FORMATO DE IMPRESIÓN" arriba del borde
       doc.setFontSize(8);
       doc.setTextColor(41, 128, 185);
       doc.text('FORMATO DE IMPRESIÓN MIS RESERVAS', 15, 8);
 
-      // 🖼️ LOGO A LA IZQUIERDA
+      // Logo
       doc.addImage(logo, 'PNG', 20, 18, 35, 35);
 
-      // 📋 TÍTULO CENTRADO GRANDE
+      // Título
       doc.setFontSize(18);
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(0, 0, 0);
       doc.text('MIS RESERVAS', pageWidth / 2, 35, { align: 'center' });
 
-      // 📐 LÍNEA HORIZONTAL DEBAJO DEL TÍTULO
       doc.setDrawColor(200, 200, 200);
       doc.setLineWidth(0.5);
       doc.line(60, 42, pageWidth - 60, 42);
 
-      // 📝 INFORMACIÓN DEL LISTADO
+      // Información del listado
       doc.setFontSize(10);
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(0, 0, 0);
       doc.text('LISTADO DE RESERVAS', 20, 58);
 
-      // Fecha desde y hasta
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(9);
       const fechaDesde = this.filtroFechaDesde || 'dd/MM/yyyy';
       const fechaHasta = this.filtroFechaHasta || 'dd/MM/yyyy';
       doc.text(`Fecha desde: ${fechaDesde}`, 20, 65);
       doc.text(`Fecha hasta: ${fechaHasta}`, 110, 65);
-
-      // Profesor
       doc.text(`Profesor: ${this.usuarioLogueado}`, 20, 72);
 
-      // 🔥 ORDENAR reservas por fecha y luego por tramo horario
+      // Ordenar reservas por fecha y tramo horario
       const reservasOrdenadas = [...this.filtradoReservas].sort((a, b) => {
-        // Primero ordenar por fecha
         const fechaComparison = new Date(a.fecha).getTime() - new Date(b.fecha).getTime();
         if (fechaComparison !== 0) {
           return fechaComparison;
         }
 
-        // Si las fechas son iguales, ordenar por hora de inicio del tramo
         const horaA = this.extraerHoraInicioParaOrdenar(a.tramoHorario);
         const horaB = this.extraerHoraInicioParaOrdenar(b.tramoHorario);
         return horaA - horaB;
       });
 
-      // ✅ TABLA CON ESTILO VERDE OSCURO
+      // Tabla de reservas
       autoTable(doc, {
         head: [['Fecha', 'Tipo', 'Espacio/Material', 'Tramo Horario', 'Estado']],
         body: reservasOrdenadas.map(r => [
@@ -618,9 +648,7 @@ export class HistoricoReservasComponent implements OnInit {
         tableLineWidth: 0.1
       });
 
-      // 📄 PIE DE PÁGINA
-      const finalY = (doc as any).lastAutoTable.finalY || 100;
-
+      // Pie de página
       doc.setFontSize(8);
       doc.setTextColor(100, 100, 100);
       doc.text(
@@ -648,39 +676,37 @@ export class HistoricoReservasComponent implements OnInit {
         { align: 'right' }
       );
 
-      // 💾 GUARDAR PDF
       doc.save(`mis_reservas_${new Date().getTime()}.pdf`);
-      console.log('📄 PDF generado con estilo personalizado y ordenado');
     };
 
     logo.onerror = () => {
-      console.warn('⚠️ Error al cargar el logo del instituto');
+      console.warn('Error al cargar el logo del instituto');
       this.generarPDFSinLogo();
     };
   }
 
-  // 🔥 NUEVO MÉTODO: Extraer hora en formato numérico para ordenar
+  /**
+   * Convierte un tramo horario a minutos para ordenación
+   */
   extraerHoraInicioParaOrdenar(tramoHorario: string): number {
     if (!tramoHorario) return 0;
 
-    // Extraer la hora de inicio (ej: "08:00-09:00" -> "08:00")
     const horaInicio = tramoHorario.includes('-')
       ? tramoHorario.split('-')[0].trim()
       : tramoHorario;
 
-    // Convertir a minutos desde medianoche para facilitar comparación
-    // ej: "08:00" -> 8*60 + 0 = 480
     const [horas, minutos] = horaInicio.split(':').map(Number);
     return horas * 60 + minutos;
   }
 
-  // 🔥 VERSIÓN SIN LOGO (por si falla la carga)
+  /**
+   * Genera un PDF sin logo en caso de error de carga
+   */
   generarPDFSinLogo(): void {
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
 
-    // Borde superior azul
     doc.setDrawColor(41, 128, 185);
     doc.setLineWidth(1.5);
     doc.line(10, 10, pageWidth - 10, 10);
@@ -689,7 +715,6 @@ export class HistoricoReservasComponent implements OnInit {
     doc.setTextColor(41, 128, 185);
     doc.text('FORMATO DE IMPRESIÓN MIS RESERVAS', 15, 8);
 
-    // Título
     doc.setFontSize(18);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(0, 0, 0);
@@ -699,7 +724,6 @@ export class HistoricoReservasComponent implements OnInit {
     doc.setLineWidth(0.5);
     doc.line(60, 32, pageWidth - 60, 32);
 
-    // Información
     doc.setFontSize(10);
     doc.text('LISTADO DE RESERVAS', 20, 45);
 
@@ -710,7 +734,6 @@ export class HistoricoReservasComponent implements OnInit {
     const fechaGeneracion = new Date().toLocaleDateString('es-ES');
     doc.text(`Fecha: ${fechaGeneracion}`, 20, 59);
 
-    // Tabla
     autoTable(doc, {
       head: [['Fecha', 'Tipo', 'Espacio/Material', 'Tramo Horario', 'Estado']],
       body: this.filtradoReservas.map(r => [
@@ -746,14 +769,23 @@ export class HistoricoReservasComponent implements OnInit {
     doc.save(`mis_reservas_${new Date().getTime()}.pdf`);
   }
 
+  /**
+   * Verifica si el profesor puede modificar la reserva
+   */
   puedeModificar(reserva: any): boolean {
     return this.esMiReserva(reserva) && reserva.estado !== 'Finalizada';
   }
 
+  /**
+   * Verifica si el profesor puede eliminar la reserva
+   */
   puedeEliminar(reserva: any): boolean {
     return this.esMiReserva(reserva) && reserva.estado !== 'Finalizada';
   }
 
+  /**
+   * Obtiene la fecha actual en formato YYYY-MM-DD
+   */
   obtenerFechaHoy(): string {
     const hoy = new Date();
     const year = hoy.getFullYear();

@@ -8,7 +8,7 @@ public class ReservaRecursoResponseDTO {
     private String tramoHorario;
     private String nombreRecurso;
     private String nombreProfesor;
-    private Integer idProfesor;  // 🔥 AÑADIDO
+    private Integer idProfesor;  
 
     public ReservaRecursoResponseDTO() {}
 

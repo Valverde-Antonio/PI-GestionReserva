@@ -29,26 +29,23 @@ export interface ReservaRecursoDTO {
 export class ReservaService {
   private apiUrl = 'http://localhost:8085/api';
 
-  constructor(private http: HttpClient) {
-    console.log('ReservaService inicializado');
-  }
+  constructor(private http: HttpClient) {}
 
-  // ============================================
-  // RESERVAS DE ESPACIOS
-  // ============================================
-
+  /**
+   * Obtiene todas las reservas de espacios
+   */
   getReservasEspacio(): Observable<any[]> {
-    console.log('Obteniendo todas las reservas de espacios');
     return this.http.get<any[]>(`${this.apiUrl}/reservaEspacio`);
   }
 
+  /**
+   * Crea una nueva reserva de espacio
+   */
   crearReservaEspacio(reserva: ReservaEspacioDTO): Observable<any> {
-    console.log('Enviando nueva reserva de espacio:', reserva);
     return this.http.post(`${this.apiUrl}/reservaEspacio/crear`, reserva, {
       responseType: 'text' as 'json'
     }).pipe(
       map(response => {
-        console.log('✅ Respuesta del servidor (espacio):', response);
         try {
           return typeof response === 'string' ? JSON.parse(response) : response;
         } catch {
@@ -58,13 +55,14 @@ export class ReservaService {
     );
   }
 
+  /**
+   * Actualiza una reserva de espacio existente
+   */
   actualizarReservaEspacio(id: number, reserva: any): Observable<any> {
-    console.log(`Actualizando reserva de espacio con ID ${id}:`, reserva);
     return this.http.put(`${this.apiUrl}/reservaEspacio/actualizar/${id}`, reserva, {
       responseType: 'text' as 'json'
     }).pipe(
       map(response => {
-        console.log('✅ Respuesta del servidor:', response);
         try {
           return typeof response === 'string' ? JSON.parse(response) : response;
         } catch {
@@ -74,46 +72,50 @@ export class ReservaService {
     );
   }
 
+  /**
+   * Elimina una reserva de espacio
+   */
   eliminarReservaEspacio(id: number): Observable<any> {
-    console.log('🗑️ Eliminando reserva de espacio con ID', id);
     return this.http.delete(`${this.apiUrl}/reservaEspacio/eliminar/${id}`, {
       responseType: 'text'
     }).pipe(
       map(response => {
-        console.log('✅ Respuesta del servidor:', response);
         return { success: true, message: response };
       })
     );
   }
 
+  /**
+   * Busca reservas de espacios por fecha y aula
+   */
   buscarReservasEspacio(fecha: string, aula: string): Observable<any[]> {
-    console.log(`Buscando reservas para fecha ${fecha}, aula ${aula}`);
     return this.http.get<any[]>(`${this.apiUrl}/reservaEspacio/buscar`, {
       params: { fecha, aula }
     });
   }
 
+  /**
+   * Obtiene los turnos disponibles
+   */
   getTurnos(): Observable<string[]> {
-    console.log('📡 Solicitando turnos al backend');
     return this.http.get<string[]>(`${this.apiUrl}/reservaEspacio/turnos`);
   }
 
-  // ============================================
-  // RESERVAS DE RECURSOS
-  // ============================================
-
+  /**
+   * Obtiene todas las reservas de recursos
+   */
   getReservasRecurso(): Observable<any[]> {
-    console.log('Obteniendo todas las reservas de recursos');
     return this.http.get<any[]>(`${this.apiUrl}/reservaRecurso`);
   }
 
+  /**
+   * Crea una nueva reserva de recurso
+   */
   crearReservaRecurso(reserva: ReservaRecursoDTO): Observable<any> {
-    console.log('Enviando nueva reserva de recurso:', reserva);
     return this.http.post(`${this.apiUrl}/reservaRecurso/crear`, reserva, {
       responseType: 'text' as 'json'
     }).pipe(
       map(response => {
-        console.log('✅ Respuesta del servidor (recurso):', response);
         try {
           return typeof response === 'string' ? JSON.parse(response) : response;
         } catch {
@@ -123,13 +125,14 @@ export class ReservaService {
     );
   }
 
+  /**
+   * Actualiza una reserva de recurso existente
+   */
   actualizarReservaRecurso(id: number, reserva: any): Observable<any> {
-    console.log(`Actualizando reserva de recurso con ID ${id}:`, reserva);
     return this.http.put(`${this.apiUrl}/reservaRecurso/actualizar/${id}`, reserva, {
       responseType: 'text' as 'json'
     }).pipe(
       map(response => {
-        console.log('✅ Respuesta del servidor:', response);
         try {
           return typeof response === 'string' ? JSON.parse(response) : response;
         } catch {
@@ -139,31 +142,32 @@ export class ReservaService {
     );
   }
 
+  /**
+   * Elimina una reserva de recurso
+   */
   eliminarReservaRecurso(id: number): Observable<any> {
-    console.log(`🗑️ Eliminando reserva de recurso con ID ${id}`);
     return this.http.delete(`${this.apiUrl}/reservaRecurso/eliminar/${id}`, {
       responseType: 'text'
     }).pipe(
       map(response => {
-        console.log('✅ Respuesta del servidor:', response);
         return { success: true, message: response };
       })
     );
   }
 
+  /**
+   * Busca reservas de recursos por fecha y material
+   */
   buscarReservasRecurso(fecha: string, material: string): Observable<ReservaRecursoDTO[]> {
-    console.log(`Buscando reservas para recurso en fecha ${fecha}, material ${material}`);
     return this.http.get<ReservaRecursoDTO[]>(`${this.apiUrl}/reservaRecurso/buscar`, {
       params: { fecha, material }
     });
   }
 
-  // ============================================
-  // VERIFICACIÓN DE DISPONIBILIDAD
-  // ============================================
-
+  /**
+   * Verifica la disponibilidad de un espacio en una fecha y horario específicos
+   */
   verificarDisponibilidadEspacio(fecha: string, tramoHorario: string, idEspacio: number, idReservaActual?: number): Observable<any> {
-    console.log('🔍 Verificando disponibilidad de espacio:', { fecha, tramoHorario, idEspacio, idReservaActual });
     let params: any = { fecha, tramoHorario, idEspacio: idEspacio.toString() };
     if (idReservaActual) {
       params.idReservaActual = idReservaActual.toString();
@@ -171,8 +175,10 @@ export class ReservaService {
     return this.http.get<any>(`${this.apiUrl}/reservaEspacio/verificar-disponibilidad`, { params });
   }
 
+  /**
+   * Verifica la disponibilidad de un recurso en una fecha y horario específicos
+   */
   verificarDisponibilidadRecurso(fecha: string, tramoHorario: string, idRecurso: number, idReservaActual?: number): Observable<any> {
-    console.log('🔍 Verificando disponibilidad de recurso:', { fecha, tramoHorario, idRecurso, idReservaActual });
     let params: any = { fecha, tramoHorario, idRecurso: idRecurso.toString() };
     if (idReservaActual) {
       params.idReservaActual = idReservaActual.toString();
@@ -180,12 +186,10 @@ export class ReservaService {
     return this.http.get<any>(`${this.apiUrl}/reservaRecurso/verificar-disponibilidad`, { params });
   }
 
-  // ============================================
-  // HISTORIAL COMPLETO
-  // ============================================
-
+  /**
+   * Obtiene el historial completo de reservas (espacios y recursos)
+   */
   getHistorialCompleto(): Observable<[any[], any[]]> {
-    console.log('Obteniendo historial completo de reservas (espacios y recursos)');
     return forkJoin([
       this.getReservasEspacio(),
       this.getReservasRecurso()

@@ -12,6 +12,9 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Controlador REST para gestionar las reservas de recursos/materiales
+ */
 @RestController
 @RequestMapping("/api/reservaRecurso")
 @CrossOrigin(origins = "*", allowedHeaders = "*")
@@ -20,15 +23,12 @@ public class ReservaRecursoController {
     @Autowired
     private ReservaRecursoService reservaRecursoService;
 
+    /**
+     * Crea una nueva reserva de recurso
+     */
     @PostMapping("/crear")
     public ResponseEntity<?> crear(@RequestBody ReservaRecursoDTO dto) {
         try {
-            System.out.println("🔥 Recibida petición para crear reserva:");
-            System.out.println("  - Fecha: " + dto.getFecha());
-            System.out.println("  - Tramo: " + dto.getTramoHorario());
-            System.out.println("  - ID Recurso: " + dto.getIdRecurso());
-            System.out.println("  - ID Profesor: " + dto.getIdProfesor());
-            
             ReservaRecurso reserva = reservaRecursoService.crearDesdeDTO(dto);
             
             ReservaRecursoDTO respuesta = new ReservaRecursoDTO();
@@ -40,11 +40,10 @@ public class ReservaRecursoController {
             respuesta.setNombreRecurso(reserva.getRecurso().getNombre());
             respuesta.setNombreProfesor(reserva.getProfesor().getNombre());
             
-            System.out.println("✅ Reserva creada exitosamente con ID: " + reserva.getIdReserva());
             return ResponseEntity.ok(respuesta);
             
         } catch (RuntimeException e) {
-            System.err.println("❌ Error al crear reserva: " + e.getMessage());
+            System.err.println("Error al crear reserva: " + e.getMessage());
             
             if (e.getMessage().contains("ya está reservado") || 
                 e.getMessage().contains("Duplicate entry")) {
@@ -67,55 +66,60 @@ public class ReservaRecursoController {
                 .body(e.getMessage());
                 
         } catch (Exception e) {
-            System.err.println("❌ Error inesperado:");
-            e.printStackTrace();
+            System.err.println("Error inesperado al crear reserva: " + e.getMessage());
             return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body("Error inesperado al crear la reserva: " + e.getMessage());
         }
     }
 
+    /**
+     * Actualiza una reserva de recurso existente
+     */
     @PutMapping("/actualizar/{id}")
     public ResponseEntity<?> actualizar(@PathVariable Integer id, @RequestBody ReservaRecursoDTO dto) {
         try {
             ReservaRecurso reserva = reservaRecursoService.actualizarDesdeDTO(id, dto);
             return ResponseEntity.ok(reserva);
         } catch (Exception e) {
-            e.printStackTrace();
+            System.err.println("Error al actualizar reserva: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error al actualizar la reserva");
         }
     }
 
+    /**
+     * Elimina una reserva de recurso
+     */
     @DeleteMapping("/eliminar/{id}")
     public ResponseEntity<?> eliminar(@PathVariable Integer id) {
         try {
             reservaRecursoService.eliminar(id);
             return ResponseEntity.ok("Reserva eliminada correctamente");
         } catch (Exception e) {
-            e.printStackTrace();
+            System.err.println("Error al eliminar reserva: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error al eliminar la reserva");
         }
     }
 
+    /**
+     * Busca reservas por fecha y nombre del material
+     */
     @GetMapping("/buscar")
     public ResponseEntity<List<ReservaRecursoResponseDTO>> buscarReservasPorFechaYMaterial(
             @RequestParam String fecha,
             @RequestParam String material) {
-        try {
-            System.out.println("🔍 Buscando reservas:");
-            System.out.println("  - Fecha: " + fecha);
-            System.out.println("  - Material: " + material);
-            
+        try {            
             List<ReservaRecursoResponseDTO> resultado = reservaRecursoService.buscarPorFechaYMaterial(fecha, material);
-            
-            System.out.println("📋 Encontradas " + resultado.size() + " reservas");
             return ResponseEntity.ok(resultado);
         } catch (Exception e) {
-            e.printStackTrace();
+            System.err.println("Error al buscar reservas: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 
+    /**
+     * Filtra reservas por fecha, profesor y/o recurso
+     */
     @GetMapping("/filtrar")
     public ResponseEntity<?> filtrarReservasRecurso(
             @RequestParam(required = false) String fecha,
@@ -125,11 +129,14 @@ public class ReservaRecursoController {
             List<ReservaRecursoResponseDTO> resultado = reservaRecursoService.filtrarReservas(fecha, idProfesor, idRecurso);
             return ResponseEntity.ok(resultado);
         } catch (Exception e) {
-            e.printStackTrace();
+            System.err.println("Error al filtrar reservas: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error al filtrar las reservas");
         }
     }
 
+    /**
+     * Obtiene todas las reservas de recursos
+     */
     @GetMapping
     public ResponseEntity<?> obtenerTodas() {
         try {
@@ -149,23 +156,28 @@ public class ReservaRecursoController {
                     .toList();
             return ResponseEntity.ok(dtoList);
         } catch (Exception e) {
-            e.printStackTrace();
+            System.err.println("Error al obtener reservas de recursos: " + e.getMessage());
             return ResponseEntity.internalServerError().body("Error al obtener reservas de recursos");
         }
     }
 
+    /**
+     * Elimina una reserva de recurso (endpoint alternativo)
+     */
     @DeleteMapping("/eliminarReserva/{id}")
     public ResponseEntity<?> eliminarReservaRecurso(@PathVariable Integer id) {
         try {
             reservaRecursoService.eliminarReservaRecurso(id);
             return ResponseEntity.ok("Reserva eliminada con éxito");
         } catch (Exception e) {
-            e.printStackTrace();
+            System.err.println("Error al eliminar reserva de recurso: " + e.getMessage());
             return ResponseEntity.internalServerError().body("Error al eliminar la reserva de recurso");
         }
     }
 
-    // 🔥 NUEVO: Endpoint para verificar disponibilidad
+    /**
+     * Verifica la disponibilidad de un recurso en una fecha y horario específicos
+     */
     @GetMapping("/verificar-disponibilidad")
     public ResponseEntity<Map<String, Object>> verificarDisponibilidad(
             @RequestParam String fecha,
@@ -173,13 +185,11 @@ public class ReservaRecursoController {
             @RequestParam Long idRecurso,
             @RequestParam(required = false) Long idReservaActual) {
         try {
-            System.out.println("🔍 Petición de verificación de disponibilidad de recurso recibida");
             Map<String, Object> resultado = reservaRecursoService.verificarDisponibilidad(
                 fecha, tramoHorario, idRecurso, idReservaActual
             );
             return ResponseEntity.ok(resultado);
         } catch (Exception e) {
-            System.err.println("❌ Error al verificar disponibilidad: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("error", e.getMessage()));
         }
