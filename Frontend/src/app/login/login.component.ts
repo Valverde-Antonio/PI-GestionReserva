@@ -16,6 +16,11 @@ export class LoginComponent {
   clave = '';
   mostrarPassword = false;
 
+  // Modal
+  mostrarModal: boolean = false;
+  mensajeModal: string = '';
+  tipoMensaje: 'success' | 'error' | 'warning' | 'info' = 'error';
+
   constructor(private authService: AuthService, private router: Router) {}
 
   login(): void {
@@ -26,14 +31,14 @@ export class LoginComponent {
         console.info('[LoginComponent] Rol tras login =>', rol || '(vacío)');
 
         if (rol === 'profesor') {
-          console.info('[LoginComponent] Navegando a /paginaPrincipal'); // ← CORREGIDO
-          this.router.navigate(['/paginaPrincipal']); // ← CORREGIDO
+          console.info('[LoginComponent] Navegando a /paginaPrincipal');
+          this.router.navigate(['/paginaPrincipal']);
         } else if (rol === 'directivo') {
-          console.info('[LoginComponent] Navegando a /paginaPrincipalAdmin'); // ← CORREGIDO
-          this.router.navigate(['/paginaPrincipalAdmin']); // ← CORREGIDO
+          console.info('[LoginComponent] Navegando a /paginaPrincipalAdmin');
+          this.router.navigate(['/paginaPrincipalAdmin']);
         } else {
-          console.error('[LoginComponent] Usuario sin rol asignado. Mostrar alerta.');
-          alert('Usuario sin rol asignado. Contacte con el administrador.');
+          console.error('[LoginComponent] Usuario sin rol asignado. Mostrar modal.');
+          this.mostrarMensaje('Usuario sin rol asignado. Contacte con el administrador.', 'warning');
         }
         console.groupEnd();
       },
@@ -41,7 +46,7 @@ export class LoginComponent {
         console.groupCollapsed('%c[LoginComponent] Error en login', 'color:#e00');
         console.error(err);
         console.groupEnd();
-        alert('Credenciales incorrectas');
+        this.mostrarMensaje('Credenciales incorrectas. Por favor, verifica tu usuario y contraseña.', 'error');
       }
     });
   }
@@ -55,5 +60,22 @@ export class LoginComponent {
     this.usuario = '';
     this.clave = '';
     console.debug('[LoginComponent] limpiar() -> campos vaciados');
+  }
+
+  /**
+   * Muestra un mensaje en el modal
+   */
+  mostrarMensaje(mensaje: string, tipo: 'success' | 'error' | 'warning' | 'info'): void {
+    this.mensajeModal = mensaje;
+    this.tipoMensaje = tipo;
+    this.mostrarModal = true;
+  }
+
+  /**
+   * Cierra el modal
+   */
+  cerrarModal(): void {
+    this.mostrarModal = false;
+    this.mensajeModal = '';
   }
 }

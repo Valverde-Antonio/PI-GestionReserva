@@ -1,118 +1,198 @@
 <div class="container mt-4">
-  <h2 class="mb-3">Todas las Reservas</h2>
+  <h2 class="mb-3">
+    <i class="bi bi-calendar-check"></i> Todas las Reservas
+  </h2>
 
-  <div class="row g-3 mb-4">
-    <!-- Fecha Desde -->
-    <div class="col-md-3">
-      <label class="form-label"><i class="bi bi-calendar3"></i> Fecha Desde:</label>
-      <input type="date" class="form-control" [(ngModel)]="filtroFechaDesde" (change)="filtrarReservas()">
+  <!-- Loading spinner -->
+  <div *ngIf="cargando" class="text-center my-5">
+    <div class="spinner-border text-success" role="status">
+      <span class="visually-hidden">Cargando...</span>
     </div>
-
-    <!-- Fecha Hasta -->
-    <div class="col-md-3">
-      <label class="form-label"><i class="bi bi-calendar3"></i> Fecha Hasta:</label>
-      <input type="date" class="form-control" [(ngModel)]="filtroFechaHasta" (change)="filtrarReservas()">
-    </div>
-    <div class="col-md-3">
-      <label class="form-label">Filtrar por tipo:</label>
-      <select class="form-select" [(ngModel)]="filtroTipo" (change)="filtrarReservas()">
-        <option value="Todas">Todas</option>
-        <option value="Material">Material</option>
-        <option value="Aula">Aula</option>
-      </select>
-    </div>
-
-    <div class="col-md-3" *ngIf="filtroTipo === 'Aula'">
-      <label class="form-label">Filtrar por aula:</label>
-      <select class="form-select" [(ngModel)]="filtroAula" (change)="filtrarReservas()">
-        <option value="">Todas</option>
-        <option *ngFor="let espacio of espacios" [value]="espacio.nombre">{{ espacio.nombre }}</option>
-      </select>
-    </div>
-
-    <div class="col-md-3" *ngIf="filtroTipo === 'Material'">
-      <label class="form-label">Filtrar por material:</label>
-      <select class="form-select" [(ngModel)]="filtroMaterial" (change)="filtrarReservas()">
-        <option value="">Todos</option>
-        <option *ngFor="let material of materiales" [value]="material.nombre">{{ material.nombre }}</option>
-      </select>
-    </div>
-
-    <div class="col-md-3">
-      <label class="form-label">Filtrar por profesor:</label>
-      <select class="form-select" [(ngModel)]="filtroProfesor" (change)="filtrarReservas()">
-        <option value="">Todos</option>
-        <option *ngFor="let prof of profesores" [value]="prof.nombre">{{ prof.nombre }}</option>
-      </select>
-    </div>
-
-    <div class="col-md-3 d-flex align-items-end">
-      <button class="btn btn-secondary w-100" (click)="limpiarFiltros()">Limpiar Filtros</button>
-    </div>
-    <div class="col-md-3 d-flex align-items-end">
-      <button class="btn btn-success w-100" (click)="exportarPDFTodasReservas()"
-        [disabled]="filtradoReservas.length === 0">
-        <i class="bi bi-file-earmark-pdf"></i> Exportar a PDF
-      </button>
-    </div>
+    <p class="mt-2">Cargando reservas...</p>
   </div>
 
-  <div *ngIf="reservasPaginadas.length > 0; else noResultados">
-    <div class="card mb-3" *ngFor="let r of reservasPaginadas">
+  <div *ngIf="!cargando">
+    <!-- Filtros -->
+    <div class="card mb-4">
+      <div class="card-header bg-success text-white">
+        <i class="bi bi-funnel"></i> Filtros de Búsqueda
+      </div>
       <div class="card-body">
-        <h5 class="card-title">{{ r.tipo === 'Aula' ? r.espacio : r.recurso }}</h5>
-        <p class="card-text">
-          <strong>Fecha:</strong> {{ r.fecha }}<br>
-          <strong>Hora:</strong> {{ r.horaInicio }}<br>
-          <strong>Profesor:</strong> {{ r.profesor }}<br>
-          <strong>Estado:</strong>
-          <span [ngClass]="{'text-success': r.estado === 'Finalizada', 'text-danger': r.estado === 'Cancelada'}">
-            {{ r.estado }}
-          </span>
-        </p>
-        <div class="d-flex justify-content-end gap-2">
-          <button class="btn btn-outline-primary btn-sm" (click)="modificarReserva(r)" [disabled]="procesando">
-            <i class="bi bi-pencil"></i> Editar
-          </button>
-          <button class="btn btn-outline-danger btn-sm" (click)="eliminarReserva(r)" [disabled]="procesando">
-            <i class="bi bi-trash"></i> Eliminar
-          </button>
+        <div class="row g-3">
+          <!-- Fecha Desde -->
+          <div class="col-md-3">
+            <label class="form-label"><i class="bi bi-calendar3"></i> Fecha Desde:</label>
+            <input type="date" class="form-control" [(ngModel)]="filtroFechaDesde" (change)="filtrarReservas()">
+          </div>
+          
+          <!-- Fecha Hasta -->
+          <div class="col-md-3">
+            <label class="form-label"><i class="bi bi-calendar3"></i> Fecha Hasta:</label>
+            <input type="date" class="form-control" [(ngModel)]="filtroFechaHasta" (change)="filtrarReservas()">
+          </div>
+
+          <!-- Tipo (Aula/Material) -->
+          <div class="col-md-3">
+            <label class="form-label"><i class="bi bi-tag"></i> Tipo:</label>
+            <select class="form-select" [(ngModel)]="filtroTipo" (change)="filtrarReservas()">
+              <option value="Todas">Todas</option>
+              <option value="Aula">Aula</option>
+              <option value="Material">Material</option>
+            </select>
+          </div>
+
+          <!-- Aula (solo si tipo es Aula) -->
+          <div class="col-md-3" *ngIf="filtroTipo === 'Aula'">
+            <label class="form-label"><i class="bi bi-door-open"></i> Aula:</label>
+            <select class="form-select" [(ngModel)]="filtroAula" (change)="filtrarReservas()">
+              <option value="">Todas las aulas</option>
+              <option *ngFor="let espacio of espacios" [value]="espacio.nombre">
+                {{ espacio.nombre }}
+              </option>
+            </select>
+          </div>
+
+          <!-- Material (solo si tipo es Material) -->
+          <div class="col-md-3" *ngIf="filtroTipo === 'Material'">
+            <label class="form-label"><i class="bi bi-box"></i> Material:</label>
+            <select class="form-select" [(ngModel)]="filtroMaterial" (change)="filtrarReservas()">
+              <option value="">Todos los materiales</option>
+              <option *ngFor="let material of materiales" [value]="material.nombre">
+                {{ material.nombre }}
+              </option>
+            </select>
+          </div>
+
+          <!-- Filtro por profesor (exclusivo del admin) -->
+          <div class="col-md-3">
+            <label class="form-label"><i class="bi bi-person-badge"></i> Profesor:</label>
+            <select class="form-select" [(ngModel)]="filtroProfesor" (change)="filtrarReservas()">
+              <option value="">Todos los profesores</option>
+              <option *ngFor="let prof of profesores" [value]="prof.nombre">
+                {{ prof.nombre }}
+              </option>
+            </select>
+          </div>
+
+          <!-- Botones -->
+          <div class="col-md-12 d-flex gap-2">
+            <button class="btn btn-secondary" (click)="limpiarFiltros()">
+              <i class="bi bi-x-circle"></i> Limpiar Filtros
+            </button>
+            <button class="btn btn-success" (click)="exportarPDFTodasReservas()"
+              [disabled]="filtradoReservas.length === 0">
+              <i class="bi bi-file-earmark-pdf"></i> Exportar PDF
+            </button>
+          </div>
         </div>
       </div>
     </div>
 
-    <nav class="d-flex justify-content-center mt-4">
-      <ul class="pagination">
-        <li class="page-item" [class.disabled]="currentPage === 1">
-          <a class="page-link" (click)="cambiarPagina(currentPage - 1)">Anterior</a>
-        </li>
-        <li class="page-item disabled">
-          <span class="page-link">Página {{ currentPage }} / {{ totalPages }}</span>
-        </li>
-        <li class="page-item" [class.disabled]="currentPage === totalPages">
-          <a class="page-link" (click)="cambiarPagina(currentPage + 1)">Siguiente</a>
-        </li>
-      </ul>
-    </nav>
-  </div>
-
-  <ng-template #noResultados>
-    <div class="alert alert-warning text-center mt-4">
-      No hay reservas que coincidan con los filtros aplicados.
+    <!-- Resumen -->
+    <div class="alert alert-info d-flex justify-content-between align-items-center mb-4">
+      <span>
+        <i class="bi bi-info-circle"></i>
+        Mostrando <strong>{{ filtradoReservas.length }}</strong> reservas
+        <span *ngIf="filtroFechaDesde && filtroFechaHasta">
+          del <strong>{{ filtroFechaDesde }}</strong> al <strong>{{ filtroFechaHasta }}</strong>
+        </span>
+      </span>
+      <span class="badge bg-primary">
+        Total: {{ reservas.length }}
+      </span>
     </div>
-  </ng-template>
+
+    <!-- Lista de reservas -->
+    <div *ngIf="reservasPaginadas.length > 0; else noResultados">
+      <div class="card mb-3" *ngFor="let r of reservasPaginadas" [ngClass]="{
+             'border-warning': r.estado === 'Pendiente',
+             'border-info': r.estado === 'En curso',
+             'border-success': r.estado === 'Finalizada'
+           }">
+        <div class="card-body">
+          <div class="row align-items-center">
+            <div class="col-md-8">
+              <h5 class="card-title mb-2">
+                <i class="bi" [ngClass]="r.tipo === 'Aula' ? 'bi-door-open' : 'bi-box'"></i>
+                {{ r.tipo === 'Aula' ? r.espacio : r.recurso }}
+                <span class="badge ms-2" [ngClass]="{
+                        'bg-warning': r.estado === 'Pendiente',
+                        'bg-info': r.estado === 'En curso',
+                        'bg-success': r.estado === 'Finalizada'
+                      }">
+                  {{ r.estado }}
+                </span>
+              </h5>
+              <p class="card-text mb-0">
+                <i class="bi bi-calendar3"></i> <strong>Fecha:</strong> {{ r.fecha }}<br>
+                <i class="bi bi-clock"></i> <strong>Horario:</strong> {{ r.horaInicio }}<br>
+                <i class="bi bi-person-badge"></i> <strong>Profesor:</strong> {{ r.profesor }}<br>
+                <i class="bi bi-tag"></i> <strong>Tipo:</strong> {{ r.tipo }}
+              </p>
+            </div>
+            <div class="col-md-4 text-end">
+              <div class="d-flex justify-content-end gap-2">
+                <button class="btn btn-outline-primary btn-sm" (click)="modificarReserva(r)"
+                  [disabled]="procesando">
+                  <i class="bi bi-pencil"></i> Editar
+                </button>
+                <button class="btn btn-outline-danger btn-sm" (click)="eliminarReserva(r)"
+                  [disabled]="procesando">
+                  <i class="bi bi-trash"></i> Eliminar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Paginación -->
+      <nav class="d-flex justify-content-center mt-4" *ngIf="totalPages > 1">
+        <ul class="pagination">
+          <li class="page-item" [class.disabled]="currentPage === 1">
+            <a class="page-link" (click)="cambiarPagina(currentPage - 1)" style="cursor: pointer;">
+              <i class="bi bi-chevron-left"></i> Anterior
+            </a>
+          </li>
+          <li class="page-item disabled">
+            <span class="page-link">Página {{ currentPage }} de {{ totalPages }}</span>
+          </li>
+          <li class="page-item" [class.disabled]="currentPage === totalPages">
+            <a class="page-link" (click)="cambiarPagina(currentPage + 1)" style="cursor: pointer;">
+              Siguiente <i class="bi bi-chevron-right"></i>
+            </a>
+          </li>
+        </ul>
+      </nav>
+    </div>
+
+    <ng-template #noResultados>
+      <div class="alert alert-warning text-center mt-4">
+        <i class="bi bi-exclamation-triangle fs-1"></i>
+        <p class="mb-0 mt-2">No hay reservas que coincidan con los filtros aplicados.</p>
+        <button class="btn btn-sm btn-outline-warning mt-2" (click)="limpiarFiltros()">
+          <i class="bi bi-arrow-counterclockwise"></i> Resetear filtros
+        </button>
+      </div>
+    </ng-template>
+  </div>
 </div>
 
-<!-- Modal Editar -->
+<!-- MODAL EDITAR -->
 <div class="custom-backdrop" *ngIf="mostrarModalActualizar">
   <div class="custom-modal-box">
     <div class="modal-header bg-success text-white d-flex justify-content-between align-items-center">
-      <h5 class="modal-title">Editar Reserva</h5>
+      <h5 class="modal-title"><i class="bi bi-pencil-square"></i> Editar Reserva</h5>
       <button type="button" class="btn-close btn-close-white" (click)="cerrarModal()" [disabled]="procesando"></button>
     </div>
     <div class="modal-body mt-3">
+      <div class="alert alert-info">
+        <i class="bi bi-info-circle"></i> Editando reserva de <strong>{{ reservaSeleccionada?.tipo }}</strong>
+      </div>
+
+      <!-- Profesor (solo admin puede cambiar) -->
       <div class="mb-3">
-        <label class="form-label">Profesor:</label>
+        <label class="form-label"><i class="bi bi-person-badge"></i> Profesor:</label>
         <select class="form-select" [(ngModel)]="reservaSeleccionada.profesor">
           <option *ngFor="let prof of profesores" [value]="prof.nombre">{{ prof.nombre }}</option>
         </select>
@@ -120,7 +200,7 @@
 
       <!-- Mostrar campo Espacio solo si es tipo Aula -->
       <div class="mb-3" *ngIf="reservaSeleccionada?.tipo === 'Aula'">
-        <label class="form-label">Espacio:</label>
+        <label class="form-label"><i class="bi bi-door-open"></i> Aula:</label>
         <select class="form-select" [(ngModel)]="reservaSeleccionada.espacio">
           <option *ngFor="let espacio of espacios" [value]="espacio.nombre">
             {{ espacio.nombre }}
@@ -130,7 +210,7 @@
 
       <!-- Mostrar campo Recurso solo si es tipo Material -->
       <div class="mb-3" *ngIf="reservaSeleccionada?.tipo === 'Material'">
-        <label class="form-label">Recurso:</label>
+        <label class="form-label"><i class="bi bi-box"></i> Material:</label>
         <select class="form-select" [(ngModel)]="reservaSeleccionada.recurso">
           <option *ngFor="let material of materiales" [value]="material.nombre">
             {{ material.nombre }}
@@ -139,13 +219,13 @@
       </div>
 
       <div class="mb-3">
-        <label class="form-label">Fecha:</label>
+        <label class="form-label"><i class="bi bi-calendar3"></i> Fecha:</label>
         <input type="date" class="form-control" [(ngModel)]="reservaSeleccionada.fecha" />
       </div>
 
       <!-- Select de Tramo Horario -->
       <div class="mb-3">
-        <label class="form-label">Tramo Horario:</label>
+        <label class="form-label"><i class="bi bi-clock"></i> Tramo Horario:</label>
         <select class="form-select" [(ngModel)]="reservaSeleccionada.horaInicio">
           <option value="">Selecciona un tramo horario</option>
           <option *ngFor="let tramo of tramosHorarios" [value]="tramo">
@@ -155,31 +235,34 @@
       </div>
     </div>
     <div class="modal-footer d-flex justify-content-end">
-      <button class="btn btn-secondary me-2" (click)="cerrarModal()" [disabled]="procesando">Cancelar</button>
+      <button class="btn btn-secondary me-2" (click)="cerrarModal()" [disabled]="procesando">
+        <i class="bi bi-x-circle"></i> Cancelar
+      </button>
       <button class="btn btn-success" (click)="guardarCambios()" [disabled]="procesando">
         <span *ngIf="procesando" class="spinner-border spinner-border-sm me-2"></span>
-        Guardar Cambios
+        <i *ngIf="!procesando" class="bi bi-check-circle"></i> Guardar Cambios
       </button>
     </div>
   </div>
 </div>
 
-<!-- Modal Eliminar -->
+<!-- MODAL ELIMINAR -->
 <div class="custom-backdrop" *ngIf="mostrarModalEliminar">
   <div class="custom-modal-box text-center">
     <div class="modal-header bg-danger text-white">
-      <h5 class="modal-title w-100">Confirmar Eliminación</h5>
+      <h5 class="modal-title w-100"><i class="bi bi-exclamation-triangle"></i> Confirmar Eliminación</h5>
     </div>
     <div class="modal-body">
       <p class="fs-5">¿Estás seguro de que deseas eliminar esta reserva?</p>
+      <p class="text-muted">Esta acción no se puede deshacer.</p>
     </div>
     <div class="modal-footer justify-content-center">
-      <button class="btn btn-outline-danger me-3" (click)="confirmarEliminacion()" [disabled]="procesando">
+      <button class="btn btn-danger me-3" (click)="confirmarEliminacion()" [disabled]="procesando">
         <span *ngIf="procesando" class="spinner-border spinner-border-sm me-2"></span>
-        <i class="bi bi-check-circle-fill"></i> Sí
+        <i *ngIf="!procesando" class="bi bi-check-circle-fill"></i> Sí, eliminar
       </button>
-      <button class="btn btn-outline-secondary" (click)="cancelarEliminacion()" [disabled]="procesando">
-        <i class="bi bi-x-circle-fill"></i> No
+      <button class="btn btn-secondary" (click)="cancelarEliminacion()" [disabled]="procesando">
+        <i class="bi bi-x-circle-fill"></i> No, volver
       </button>
     </div>
   </div>
@@ -232,7 +315,7 @@
   </div>
 </div>
 
-<!--MODAL INFORMATIVO-->
+<!-- MODAL INFORMATIVO -->
 <div class="custom-backdrop" *ngIf="mostrarModalInformativo">
   <div class="custom-modal-box text-center">
     <div class="modal-header" [ngClass]="{

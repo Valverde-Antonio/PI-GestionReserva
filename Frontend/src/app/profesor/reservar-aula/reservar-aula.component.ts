@@ -212,7 +212,7 @@ export class ReservarAulaComponent implements OnInit {
 
     this.reservaService.crearReservaEspacio(reserva).subscribe({
       next: () => {
-        this.mostrarModalConMensaje('Reserva creada con éxito');
+        this.mostrarModalConMensaje('Reserva creada correctamente');
         this.cargarReservas();
       },
       error: (error) => {

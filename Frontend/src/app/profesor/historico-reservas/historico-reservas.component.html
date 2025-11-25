@@ -1,6 +1,6 @@
 <div class="container mt-4">
   <h2 class="mb-3">
-    <i class="bi bi-calendar-check"></i> Mis Reservas
+    <i class="bi bi-calendar-check"></i> Todas las Reservas
   </h2>
 
   <!-- Loading spinner -->
@@ -41,7 +41,7 @@
           </div>
 
           <!-- Aula (solo si tipo es Aula) -->
-          <div class="col-md-3" *ngIf="filtroTipo === 'Aula' || filtroTipo === 'Todas'">
+          <div class="col-md-3" *ngIf="filtroTipo === 'Aula'">
             <label class="form-label"><i class="bi bi-door-open"></i> Aula:</label>
             <select class="form-select" [(ngModel)]="filtroAula" (change)="filtrarReservas()">
               <option value="">Todas las aulas</option>
@@ -52,7 +52,7 @@
           </div>
 
           <!-- Material (solo si tipo es Material) -->
-          <div class="col-md-3" *ngIf="filtroTipo === 'Material' || filtroTipo === 'Todas'">
+          <div class="col-md-3" *ngIf="filtroTipo === 'Material'">
             <label class="form-label"><i class="bi bi-box"></i> Material:</label>
             <select class="form-select" [(ngModel)]="filtroMaterial" (change)="filtrarReservas()">
               <option value="">Todos los materiales</option>
